@@ -1,0 +1,28 @@
+#!/usr/bin/env bash
+
+set -e
+SCRIPT_DIR="$( cd "$( dirname "${BASH_SOURCE[0]}" )" &> /dev/null && pwd )"
+cd $SCRIPT_DIR/..
+
+# create .env file if it doesn't exist
+if test ! -f ./docker.env; then
+    echo "creating docker.env file"
+    cp docker.env.dist docker.env
+fi
+
+ENVIRONMENT_FILES="--env-file docker.env.dist --env-file docker.env"
+
+# get the host's user id to sync with the docker's user id
+EGID=$(id -g $EUID)
+if [[ $EUID == 0 ]]; then
+   echo "don't run this as root, else all files inside Docker will be inaccessible to your local user " 1>&2
+   exit 1
+fi
+
+# build docker
+docker compose $ENVIRONMENT_FILES build --build-arg USER_ID=${EUID} --build-arg GROUP_ID=${EGID} "$@"
+
+echo
+echo "optionally change /etc/hosts to add a line with: 127.0.0.1 application.local"
+echo "you can use any hostname you want, default available on localhost"
+echo

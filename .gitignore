@@ -1,0 +1,4 @@
+# docker configuration
+/docker.env
+
+/.env

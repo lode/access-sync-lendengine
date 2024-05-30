@@ -1,0 +1,9 @@
+#!/usr/bin/env bash
+
+set -e
+SCRIPT_DIR="$( cd "$( dirname "${BASH_SOURCE[0]}" )" &> /dev/null && pwd )"
+cd $SCRIPT_DIR/..
+
+ENVIRONMENT_FILES="--env-file docker.env.dist --env-file docker.env"
+
+docker compose $ENVIRONMENT_FILES logs --timestamps --tail=250 --follow
