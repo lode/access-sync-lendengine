@@ -106,8 +106,17 @@ class ConvertContactsCommand extends Command
 		
 		$contactsConverted = [];
 		foreach ($contactCsvLines as $contactCsvLine) {
-			$contactConverted = [];
-		
+			$contactConverted = [
+				'First name'     => null,
+				'Last name'      => null,
+				'Email'          => null,
+				'Telephone'      => null,
+				'Address line 1' => null,
+				'City'           => null,
+				'State'          => '-',
+				'Postcode'       => null,
+			];
+			
 			/**
 			 * simple mapping
 			 */

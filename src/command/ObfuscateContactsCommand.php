@@ -28,14 +28,15 @@ class ObfuscateContactsCommand extends Command
 		$faker = Faker::create('nl_NL');
 		
 		$expectedHeaders = [
-			'Last name',
 			'First name',
-			'Address line 1',
-			'Postcode',
-			'Telephone',
+			'Last name',
 			'Email',
-			'custom_notes',
+			'Telephone',
+			'Address line 1',
 			'City',
+			'State',
+			'Postcode',
+			'custom_notes',
 		];
 		$contactsCsvLines = $service->getExportCsv($dataDirectory.'/LendEngineContacts_'.$timestamp.'.csv', $expectedHeaders, $csvSeparator="\t");
 		
@@ -43,14 +44,19 @@ class ObfuscateContactsCommand extends Command
 		foreach ($contactsCsvLines as $contactCsvLine) {
 			$obfuscatedCsvLine = $contactCsvLine;
 			
-			$obfuscatedCsvLine['Last name']      = $obfuscatedCsvLine['Last name'] !== '' ?      $faker->lastName()  : '';
 			$obfuscatedCsvLine['First name']     = $obfuscatedCsvLine['First name'] !== '' ?     $faker->firstName()  : '';
-			$obfuscatedCsvLine['Address line 1'] = $obfuscatedCsvLine['Address line 1'] !== '' ? $faker->streetName(). ' '.$faker->randomNumber(4) : '';
-			$obfuscatedCsvLine['Postcode']       = $obfuscatedCsvLine['Postcode'] !== '' ?       $faker->postcode()  : '';
+			$obfuscatedCsvLine['Last name']      = $obfuscatedCsvLine['Last name'] !== '' ?      $faker->lastName()  : '';
 			$obfuscatedCsvLine['Telephone']      = $obfuscatedCsvLine['Telephone'] !== '' ?      $faker->phoneNumber()  : '';
-			$obfuscatedCsvLine['Email']          = $obfuscatedCsvLine['Email'] !== '' ?          $faker->email()  : '';
-			$obfuscatedCsvLine['custom_notes']   = $obfuscatedCsvLine['custom_notes'] !== '' ?   $faker->text()  : '';
+			$obfuscatedCsvLine['Email']          = $obfuscatedCsvLine['Email'] !== '' ?          $faker->safeEmail()  : '';
+			$obfuscatedCsvLine['Address line 1'] = $obfuscatedCsvLine['Address line 1'] !== '' ? $faker->streetName(). ' '.$faker->randomNumber(4) : '';
 			$obfuscatedCsvLine['City']           = $obfuscatedCsvLine['City'] !== '' ?           $faker->city()  : '';
+			$obfuscatedCsvLine['Postcode']       = $obfuscatedCsvLine['Postcode'] !== '' ?       $faker->postcode()  : '';
+			$obfuscatedCsvLine['custom_notes']   = $obfuscatedCsvLine['custom_notes'] !== '' ?   $faker->text()  : '';
+			
+			// Lend Engine has a limit of 25 chars ...
+			if (mb_strlen($obfuscatedCsvLine['Last name']) > 25) {
+				$obfuscatedCsvLine['Last name'] = mb_substr($obfuscatedCsvLine['Last name'], 0, 25);
+			}
 			
 			$obfuscatedCsvLines[] = $obfuscatedCsvLine;
 		}
