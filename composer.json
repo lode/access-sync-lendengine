@@ -1,0 +1,19 @@
+{
+    "name": "lode/access-sync-lendengine",
+    "description": "Sync data from SpeelotheekSoftware Access to Lend Engine",
+    "type": "project",
+    "license": "MIT",
+    "autoload": {
+        "psr-4": {
+            "Lode\\AccessSyncLendEngine\\": "src/"
+        }
+    },
+    "authors": [
+        {
+            "name": "Lode Claassen"
+        }
+    ],
+    "require": {
+        "symfony/console": "^7.0"
+    }
+}
