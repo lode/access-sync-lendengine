@@ -1,5 +1,6 @@
 # docker configuration
 /docker.env
 
+/data
 /.env
 /vendor

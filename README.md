@@ -15,13 +15,25 @@ Sync data from [SpeelotheekSoftware's Access](https://speelotheeksoftware.nl/) t
 - Run `./script/server`
 
 
-## Usage after first setup
+## Usage
+
+### Convert website CSVs
+
+- In Access export CSVs for WebCatalogus
+- Place all 3 files in `data/`
+- Run `./script/console ./script/command convert-website-csvs <timestamp>`
+	Where `<timestamp>` is the `20240504_1705` part from `Artikelen_20240504_1705.csv`
+- A resulting CSV `LendEngineItems_<timestamp>_<convert-time>.csv` will be added in `data/`
+
+
+## Development
+
+### Usage after first setup
 
 - Start server: `./script/server`
 - See [the script/ directory](/script/README.md) for more commands
 
-
-## Connect to the database
+### Connect to the database
 
 Connect to the database from outside Docker:
 
@@ -33,9 +45,3 @@ For managing databases:
 
 - username: `root`
 - password: `root-secret`
-
-
-## To Do
-
-- Add custom bashrc
-- Setup XDebug
