@@ -50,11 +50,7 @@ class ConvertCsvService {
 	    return $csvBody;
 	}
 	
-	/**
-	 * @param  string|array<string> $field
-	 * @return string|array<string>
-	 */
-	public function trimFieldValue($field)
+	public function trimFieldValue(string|array $field): string|array
 	{
 	    if (is_array($field)) {
 	        foreach ($field as &$subField) {
