@@ -69,6 +69,12 @@ Sync data from [SpeelotheekSoftware's Access](https://speelotheeksoftware.nl/) t
 - Run `./script/console ./script/command convert-contacts`.
 - A resulting CSV `LendEngineContacts_<convert-time>.csv` will be added in `data/`.
 
+### Obfuscate contacts
+
+- Place `LendEngineContacts_<timestamp>.csv` in `data/`.
+- Run `./script/console ./script/command obfuscate-contacts <timestamp>`.
+- A resulting CSV `LendEngineContacts_<timestamp>_obfuscated_<obfuscate-time>.csv` will be added in `data/`.
+
 
 ## Development
 

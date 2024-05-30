@@ -7,11 +7,13 @@ require dirname(__DIR__).'/vendor/autoload.php';
 
 use Lode\AccessSyncLendEngine\command\ConvertContactsCommand;
 use Lode\AccessSyncLendEngine\command\ConvertWebsiteCsvsCommand;
+use Lode\AccessSyncLendEngine\command\ObfuscateContactsCommand;
 use Symfony\Component\Console\Application;
 
 $application = new Application();
 
 $application->add(new ConvertContactsCommand());
 $application->add(new ConvertWebsiteCsvsCommand());
+$application->add(new ObfuscateContactsCommand());
 
 $application->run();

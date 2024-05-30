@@ -19,6 +19,7 @@ See further instructions in [README.md](/README.md).
 
 ## Console
 
+- `./script/console ./script/command`: run a Symfony command
 - `./script/console <command>`: run a single command in Docker
 - `./script/console`: get a bash into Docker
 - `./script/root-console`: get a bash _as root_ in Docker, for installing OS packages
