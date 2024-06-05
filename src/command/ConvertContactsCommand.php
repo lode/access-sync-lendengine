@@ -13,6 +13,10 @@ use Symfony\Component\Console\Output\OutputInterface;
 #[AsCommand(name: 'convert-contacts')]
 class ConvertContactsCommand extends Command
 {
+	private const MEMBER_STATUS_ACTIVE   = 1;
+	private const MEMBER_STATUS_CANCELED = 2;
+	private const MEMBER_STATUS_INACTIVE = 3;
+	
 	protected function execute(InputInterface $input, OutputInterface $output): int
 	{
 		$service = new ConvertCsvService();
@@ -80,6 +84,53 @@ class ConvertContactsCommand extends Command
 			'plt_actief',
 		];
 		
+		$memberMapping = [
+			'lid_id'                 => null,
+			'lid_lis_id'             => 'is_active',
+			'lid_lit_id'             => null,
+			'lid_voornaam'           => null,
+			'lid_tussenvoegsel'      => null,
+			'lid_achternaam'         => null,
+			'lid_voorletters'        => null,
+			'lid_voornaam2'          => null,
+			'lid_tussenvoegsel2'     => null,
+			'lid_achternaam2'        => null,
+			'lid_voorletters2'       => null,
+			'lid_str_id'             => null,
+			'lid_huisnr'             => null,
+			'lid_postcode'           => null,
+			'lid_telefoonnr'         => null,
+			'lid_mobieltelnr'        => null,
+			'lid_geslacht'           => null,
+			'lid_via'                => null,
+			'lid_email'              => null,
+			'lid_opzegreden'         => null,
+			'lid_contributietot'     => null,
+			'lid_telenenaantal'      => null,
+			'lid_tespelenaantal'     => null,
+			'lid_LedenpasPrinten'    => null,
+			'lid_PrintSoort'         => null,
+			'lid_vanafdatum'         => null,
+			'lid_einddatum'          => null,
+			'lid_toevoegdatum'       => null,
+			'lid_wijzigdatum'        => null,
+			'lid_medewerkerambities' => null,
+			'lid_identificatie'      => null,
+			'lid_autoincasso'        => null,
+			'lid_nationaliteit'      => null,
+			'lid_bankgironr'         => null,
+			'lid_aanhef'             => null,
+			'lid_IBAN'               => null,
+			'lid_straat'             => null,
+			'lid_plaats'             => null,
+			'lid_bijzonderheden'     => null,
+			'lid_vrw_id'             => null,
+			'lid_kin_id'             => null,
+			'lid_key'                => null,
+			'lid_oms'                => null,
+		];
+		$memberExpectedHeaders = array_keys($memberMapping);
+		
 		echo 'Reading responsibles ...'.PHP_EOL;
 		$responsiblesCsvLines = $service->getExportCsv($responsibleCsvFilename, $responsibleExpectedHeaders);
 		
@@ -90,6 +141,10 @@ class ConvertContactsCommand extends Command
 		echo 'Reading places ...'.PHP_EOL;
 		$cityCsvFilename = $dataDirectory.'/Plaats.csv';
 		$cityCsvLines = $service->getExportCsv($cityCsvFilename, $cityExpectedHeaders);
+		
+		echo 'Reading members ...'.PHP_EOL;
+		$memberCsvFilename = $dataDirectory.'/Lid.csv';
+		$memberCsvLines = $service->getExportCsv($memberCsvFilename, $memberExpectedHeaders);
 		
 		$cityMapping = [];
 		foreach ($cityCsvLines as $cityCsvLine) {
@@ -104,8 +159,27 @@ class ConvertContactsCommand extends Command
 			];
 		}
 		
+		$responsibleMemberMapping = [];
+		foreach ($memberCsvLines as $memberCsvLine) {
+			$responsibleId = $memberCsvLine['lid_vrw_id'];
+			
+			if (isset($responsibleMemberMapping[$responsibleId])) {
+				// @todo figure out which member is the active one
+			}
+			
+			$responsibleMemberMapping[$responsibleId] = $memberCsvLine;
+		}
+		
 		$contactsConverted = [];
 		foreach ($responsiblesCsvLines as $responsibleCsvLine) {
+			// skip non-active members
+			$responsibleId = $responsibleCsvLine['vrw_id'];
+			$memberCsvLine = $responsibleMemberMapping[$responsibleId];
+			$memberStatusId = $memberCsvLine['lid_lis_id'];
+			if ($memberStatusId !== self::MEMBER_STATUS_ACTIVE) {
+				continue;
+			}
+			
 			$contactConverted = [
 				'First name'     => null,
 				'Last name'      => null,
@@ -147,7 +221,7 @@ class ConvertContactsCommand extends Command
 			// collecting address info
 			$streetId = $contactConverted['Address line 1'][0];
 			$houseNumber = $contactConverted['Address line 1'][1];
-		
+			
 			if (isset($streetMapping[$streetId])) {
 				$contactConverted['Address line 1'] = $streetMapping[$streetId]['streetName'].' '.$houseNumber;
 				$contactConverted['City'] = $streetMapping[$streetId]['cityName'];
@@ -155,10 +229,10 @@ class ConvertContactsCommand extends Command
 			else {
 				$contactConverted['Address line 1'] = '[straat id '.$streetId.']'.' '.$houseNumber;
 			}
-		
+			
 			// phone number
 			$contactConverted['Telephone'] = implode(' / ', array_filter($contactConverted['Telephone']));
-		
+			
 			$contactsConverted[] = $contactConverted;
 		}
 		
