@@ -21,8 +21,8 @@ class ConvertContactsCommand extends Command
 		/**
 		 * get access file contents
 		 */
-		$contactCsvFilename = $dataDirectory.'/Verantwoordelijke.csv';
-		$contactMapping = [
+		$responsibleCsvFilename = $dataDirectory.'/Verantwoordelijke.csv';
+		$responsibleMapping = [
 			'vrw_id'                 => null,
 			'vrw_key'                => null,
 			'vrw_oms'                => null,
@@ -60,7 +60,7 @@ class ConvertContactsCommand extends Command
 			'vrw_extra3'             => null,
 			'vrw_bijzonderheden'     => 'custom_notes',
 		];
-		$contactExpectedHeaders = array_keys($contactMapping);
+		$responsibleExpectedHeaders = array_keys($responsibleMapping);
 		
 		$streetExpectedHeaders = [
 			'str_id',
@@ -80,14 +80,14 @@ class ConvertContactsCommand extends Command
 			'plt_actief',
 		];
 		
-		echo 'Reading verantwoordelijken ...'.PHP_EOL;
-		$contactCsvLines = $service->getExportCsv($contactCsvFilename, $contactExpectedHeaders);
+		echo 'Reading responsibles ...'.PHP_EOL;
+		$responsiblesCsvLines = $service->getExportCsv($responsibleCsvFilename, $responsibleExpectedHeaders);
 		
-		echo 'Reading straten ...'.PHP_EOL;
+		echo 'Reading streets ...'.PHP_EOL;
 		$streetCsvFilename = $dataDirectory.'/Straat.csv';
 		$streetCsvLines = $service->getExportCsv($streetCsvFilename, $streetExpectedHeaders);
 		
-		echo 'Reading plaatsen ...'.PHP_EOL;
+		echo 'Reading places ...'.PHP_EOL;
 		$cityCsvFilename = $dataDirectory.'/Plaats.csv';
 		$cityCsvLines = $service->getExportCsv($cityCsvFilename, $cityExpectedHeaders);
 		
@@ -105,7 +105,7 @@ class ConvertContactsCommand extends Command
 		}
 		
 		$contactsConverted = [];
-		foreach ($contactCsvLines as $contactCsvLine) {
+		foreach ($responsiblesCsvLines as $responsibleCsvLine) {
 			$contactConverted = [
 				'First name'     => null,
 				'Last name'      => null,
@@ -120,30 +120,30 @@ class ConvertContactsCommand extends Command
 			/**
 			 * simple mapping
 			 */
-			foreach ($contactMapping as $csvKey => $contactKey) {
+			foreach ($responsibleMapping as $responsibleKey => $contactKey) {
 				// skip unmapped values
 				if ($contactKey === null) {
 					continue;
 				}
-		
-				if (isset($contactConverted[$contactKey]) && is_array($contactConverted[$contactKey]) === false) {
+				
+				if (isset($contactConverted[$contactKey]) && $contactConverted[$contactKey] !== null && is_array($contactConverted[$contactKey]) === false) {
 					$contactConverted[$contactKey] = [
 						$contactConverted[$contactKey],
 					];
-					$contactConverted[$contactKey][] = $contactCsvLine[$csvKey];
+					$contactConverted[$contactKey][] = $responsibleCsvLine[$responsibleKey];
 				}
 				else {
-					$contactConverted[$contactKey] = $contactCsvLine[$csvKey];
+					$contactConverted[$contactKey] = $responsibleCsvLine[$responsibleKey];
 				}
 			}
-		
+			
 			/**
 			 * converting
 			 */
-		
-			// concat tussenvoegsel and last name
+			
+			// concat last name affix ('tussenvoegsel') and last name
 			$contactConverted['Last name'] = implode(' ', $contactConverted['Last name']);
-		
+			
 			// collecting address info
 			$streetId = $contactConverted['Address line 1'][0];
 			$houseNumber = $contactConverted['Address line 1'][1];

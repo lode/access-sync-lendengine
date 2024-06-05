@@ -11,6 +11,18 @@ use Symfony\Component\Console\Input\InputArgument;
 use Symfony\Component\Console\Input\InputInterface;
 use Symfony\Component\Console\Output\OutputInterface;
 
+/**
+ * @todo convert 'Omschrijving'
+ *       - split into paragraphs
+ *       - assign each paragraph to a certain item column
+ * @todo convert 'Samenvatting'
+ *       - recognize checked out
+ *       - recognize maintenance
+ * @todo convert 'Kenmerk_Naam_Waarde'
+ *       - recognize filled value
+ * @todo make 'verjaardagsspeelgoed' being not reservable configurable?
+ */
+
 #[AsCommand(name: 'convert-website-csvs')]
 class ConvertWebsiteCsvsCommand extends Command
 {
@@ -21,29 +33,18 @@ class ConvertWebsiteCsvsCommand extends Command
 	
 	protected function execute(InputInterface $input, OutputInterface $output): int
 	{
-		/**
-		 * @todo convert 'Omschrijving'
-		 *       - split into paragraphs
-		 *       - assign each paragraph to a certain item column
-		 * @todo convert 'Samenvatting'
-		 *       - recognize checked out
-		 *       - recognize maintenance
-		 * @todo convert 'Kenmerk_Naam_Waarde'
-		 *       - recognize filled value
-		 */
-		
 		$service = new ConvertCsvService();
 		$dataDirectory = dirname(dirname(__DIR__)).'/data';
 		
 		/**
 		 * get access file contents
 		 */
-		$csvTimestamp        = $input->getArgument('csvTimestamp');
-		$itemCsvFilename     = $dataDirectory.'/Artikelen_'.$csvTimestamp.'.csv';
-		$categoryCsvFilename = $dataDirectory.'/ArtikelTypes_'.$csvTimestamp.'.csv';
-		$brandCsvFilename    = $dataDirectory.'/Merken_'.$csvTimestamp.'.csv';
+		$csvTimestamp           = $input->getArgument('csvTimestamp');
+		$articleCsvFilename     = $dataDirectory.'/Artikelen_'.$csvTimestamp.'.csv';
+		$articleTypeCsvFilename = $dataDirectory.'/ArtikelTypes_'.$csvTimestamp.'.csv';
+		$brandCsvFilename       = $dataDirectory.'/Merken_'.$csvTimestamp.'.csv';
 		
-		$itemExpectedHeaders = [
+		$articleExpectedHeaders = [
 			'Id',
 			'Actief',
 			'Referentie',
@@ -59,7 +60,7 @@ class ConvertWebsiteCsvsCommand extends Command
 			'Kenmerk_Naam_Waarde',
 			'VerwijderBestaandeAfbeeldingen',
 		];
-		$categoryExpectedHeaders = [
+		$articleTypeExpectedHeaders = [
 			'Id',
 			'Actief',
 			'Naam',
@@ -70,21 +71,21 @@ class ConvertWebsiteCsvsCommand extends Command
 			'Naam',
 		];
 		
-		echo 'Reading items ...'.PHP_EOL;
-		$itemCsvLines = $service->getExportCsv($itemCsvFilename, $itemExpectedHeaders, $csvSeparator = ';');
+		echo 'Reading articles ...'.PHP_EOL;
+		$articleCsvLines = $service->getExportCsv($articleCsvFilename, $articleExpectedHeaders, $csvSeparator = ';');
 		
-		echo 'Reading categories ...'.PHP_EOL;
-		$categoryCsvLines = $service->getExportCsv($categoryCsvFilename, $categoryExpectedHeaders, $csvSeparator = ';');
+		echo 'Reading article types ...'.PHP_EOL;
+		$articleTypeCsvLines = $service->getExportCsv($articleTypeCsvFilename, $articleTypeExpectedHeaders, $csvSeparator = ';');
 		
 		echo 'Reading brands ...'.PHP_EOL;
 		$brandCsvLines = $service->getExportCsv($brandCsvFilename, $brandExpectedHeaders, $csvSeparator = ';');
 		
 		/**
-		 * prepare category and brand values
+		 * prepare article type and brand values
 		 */
-		$categoryMapping = [];
-		foreach ($categoryCsvLines as $categoryCsvLine) {
-			$categoryMapping[$categoryCsvLine['Id']] = $categoryCsvLine['Naam'];
+		$articleTypeMapping = [];
+		foreach ($articleTypeCsvLines as $articleTypeCsvLine) {
+			$articleTypeMapping[$articleTypeCsvLine['Id']] = $articleTypeCsvLine['Naam'];
 		}
 		
 		$brandMapping = [];
@@ -95,7 +96,7 @@ class ConvertWebsiteCsvsCommand extends Command
 		/**
 		 * generate lend engine item data
 		 */
-		$itemKeyMapping = [
+		$itemArticleMapping = [
 			'Code'              => 'Referentie',
 			'Name'              => 'Naam',
 			'Short description' => null,
@@ -108,12 +109,12 @@ class ConvertWebsiteCsvsCommand extends Command
 			'Reservable'        => 'Referentie',
 		];
 		
-		$convertedItems = [];
-		foreach ($itemCsvLines as $itemCsvLine) {
+		$itemsConverted = [];
+		foreach ($articleCsvLines as $articleCsvLine) {
 			/**
 			 * static values
 			 */
-			$convertedItem = [
+			$itemConverted = [
 				'Short description' => '-',
 				'Condition'         => 'B - Fair',
 			];
@@ -121,17 +122,17 @@ class ConvertWebsiteCsvsCommand extends Command
 			/**
 			 * mapping
 			 */
-			foreach ($itemKeyMapping as $itemKey => $csvKey) {
+			foreach ($itemArticleMapping as $itemKey => $articleKey) {
 				// skip static values
-				if ($csvKey === null) {
+				if ($articleKey === null) {
 					continue;
 				}
 				
-				if (is_array($csvKey)) {
-					$convertedItem[$itemKey] = array_intersect_key($itemCsvLine, array_flip($csvKey));
+				if (is_array($articleKey)) {
+					$itemConverted[$itemKey] = array_intersect_key($articleCsvLine, array_flip($articleKey));
 				}
 				else {
-					$convertedItem[$itemKey] = $itemCsvLine[$csvKey];
+					$itemConverted[$itemKey] = $articleCsvLine[$articleKey];
 				}
 			}
 			
@@ -139,46 +140,46 @@ class ConvertWebsiteCsvsCommand extends Command
 			 * converting
 			 */
 			// comma to dot
-			$convertedItem['Price paid'] = $service->convertFieldToAmount($convertedItem['Price paid']);
+			$itemConverted['Price paid'] = $service->convertFieldToAmount($itemConverted['Price paid']);
 			// birthday toys are not reservable
-			$convertedItem['Reservable'] = (strpos($convertedItem['Reservable'], 'V') === 0) ? 'no' : 'yes';
+			$itemConverted['Reservable'] = (strpos($itemConverted['Reservable'], 'V') === 0) ? 'no' : 'yes';
 			// amount of parts
-			preg_match('{<p>(Aantal onderdelen: [0-9]+)</p>}', $convertedItem['Components'], $matches);
-			$convertedItem['Components'] = $matches[1];
+			preg_match('{<p>(Aantal onderdelen: [0-9]+)</p>}', $itemConverted['Components'], $matches);
+			$itemConverted['Components'] = $matches[1];
 			// gather description
-			$longDescriptionValues = $convertedItem['Long description'];
-			$convertedItem['Long description'] = '';
+			$longDescriptionValues = $itemConverted['Long description'];
+			$itemConverted['Long description'] = '';
 			preg_match('{^<p>(?<description>[^-]+)</p><p></p><p>(Aantal onderdelen: [0-9]+)?</p>}', $longDescriptionValues['Omschrijving'], $matches);
 			if (isset($matches['description'])) {
-				#$convertedItem['Long description'] .= str_replace('</p><p>', PHP_EOL, $matches['description']);
-				$convertedItem['Long description'] .= '<p>'.$matches['description'].'</p>';
+				#$itemConverted['Long description'] .= str_replace('</p><p>', PHP_EOL, $matches['description']);
+				$itemConverted['Long description'] .= '<p>'.$matches['description'].'</p>';
 			}
 			if ($longDescriptionValues['Kenmerk_Naam_Waarde'] !== 'Leeftijd: Onbekend') {
-				#if ($convertedItem['Long description'] !== '') {
-				#    $convertedItem['Long description'] .= PHP_EOL.PHP_EOL;
+				#if ($itemConverted['Long description'] !== '') {
+				#    $itemConverted['Long description'] .= PHP_EOL.PHP_EOL;
 				#}
-				#$convertedItem['Long description'] .= $longDescriptionValues['Kenmerk_Naam_Waarde'];
-				$convertedItem['Long description'] .= '<p>'.$longDescriptionValues['Kenmerk_Naam_Waarde'].'</p>';
+				#$itemConverted['Long description'] .= $longDescriptionValues['Kenmerk_Naam_Waarde'];
+				$itemConverted['Long description'] .= '<p>'.$longDescriptionValues['Kenmerk_Naam_Waarde'].'</p>';
 			}
 			// category name
-			if (substr_count($convertedItem['Category'], ',') === 1) {
-				$categoryId = $service->convertFieldToArray($convertedItem['Category'])[0];
-				if (isset($categoryMapping[$categoryId])) {
-					$convertedItem['Category'] = $categoryMapping[$categoryId];
+			if (substr_count($itemConverted['Category'], ',') === 1) {
+				$articleTypeId = $service->convertFieldToArray($itemConverted['Category'])[0];
+				if (isset($articleTypeMapping[$articleTypeId])) {
+					$itemConverted['Category'] = $articleTypeMapping[$articleTypeId];
 				}
 			}
 			// brand name
-			if (isset($brandMapping[$convertedItem['Brand']])) {
-				$convertedItem['Brand'] = $brandMapping[$convertedItem['Brand']];
+			if (isset($brandMapping[$itemConverted['Brand']])) {
+				$itemConverted['Brand'] = $brandMapping[$itemConverted['Brand']];
 			}
 			
-			$convertedItems[] = $convertedItem;
+			$itemsConverted[] = $itemConverted;
 		}
 		
 		/**
 		 * create lend engine item csv
 		 */
-		$convertedCsv = $service->createImportCsv($convertedItems);
+		$convertedCsv = $service->createImportCsv($itemsConverted);
 		file_put_contents($dataDirectory.'/LendEngineItems_'.$csvTimestamp.'_'.time().'.csv', $convertedCsv);
 		
 		return Command::SUCCESS;
