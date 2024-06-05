@@ -5,6 +5,9 @@ declare(strict_types=1);
 namespace Lode\AccessSyncLendEngine\command;
 
 use Lode\AccessSyncLendEngine\service\ConvertCsvService;
+use Lode\AccessSyncLendEngine\specification\WebsiteArticleSpecification;
+use Lode\AccessSyncLendEngine\specification\WebsiteArticleTypeSpecification;
+use Lode\AccessSyncLendEngine\specification\WebsiteBrandSpecification;
 use Symfony\Component\Console\Attribute\AsCommand;
 use Symfony\Component\Console\Command\Command;
 use Symfony\Component\Console\Input\InputArgument;
@@ -39,46 +42,17 @@ class ConvertWebsiteCsvsCommand extends Command
 		/**
 		 * get access file contents
 		 */
-		$csvTimestamp           = $input->getArgument('csvTimestamp');
-		$articleCsvFilename     = $dataDirectory.'/Artikelen_'.$csvTimestamp.'.csv';
-		$articleTypeCsvFilename = $dataDirectory.'/ArtikelTypes_'.$csvTimestamp.'.csv';
-		$brandCsvFilename       = $dataDirectory.'/Merken_'.$csvTimestamp.'.csv';
-		
-		$articleExpectedHeaders = [
-			'Id',
-			'Actief',
-			'Referentie',
-			'Naam',
-			'Omschrijving',
-			'Samenvatting',
-			'CategoryId',
-			'MerkId',
-			'Afbeelding',
-			'Aantal',
-			'Prijs',
-			'ToonDePrijs',
-			'Kenmerk_Naam_Waarde',
-			'VerwijderBestaandeAfbeeldingen',
-		];
-		$articleTypeExpectedHeaders = [
-			'Id',
-			'Actief',
-			'Naam',
-		];
-		$brandExpectedHeaders = [
-			'Id',
-			'Actief',
-			'Naam',
-		];
+		$csvTimestamp = $input->getArgument('csvTimestamp');
+		$csvSeparator = ';'
 		
 		echo 'Reading articles ...'.PHP_EOL;
-		$articleCsvLines = $service->getExportCsv($articleCsvFilename, $articleExpectedHeaders, $csvSeparator = ';');
+		$articleCsvLines = $service->getExportCsv($dataDirectory.'/Artikelen_'.$csvTimestamp.'.csv', (new WebsiteArticleSpecification())->getExpectedHeaders(), $csvSeparator);
 		
 		echo 'Reading article types ...'.PHP_EOL;
-		$articleTypeCsvLines = $service->getExportCsv($articleTypeCsvFilename, $articleTypeExpectedHeaders, $csvSeparator = ';');
+		$articleTypeCsvLines = $service->getExportCsv($dataDirectory.'/ArtikelTypes_'.$csvTimestamp.'.csv', (new WebsiteArticleTypeSpecification())->getExpectedHeaders(), $csvSeparator);
 		
 		echo 'Reading brands ...'.PHP_EOL;
-		$brandCsvLines = $service->getExportCsv($brandCsvFilename, $brandExpectedHeaders, $csvSeparator = ';');
+		$brandCsvLines = $service->getExportCsv($dataDirectory.'/Merken_'.$csvTimestamp.'.csv', (new WebsiteBrandSpecification())->getExpectedHeaders(), $csvSeparator);
 		
 		/**
 		 * prepare article type and brand values
