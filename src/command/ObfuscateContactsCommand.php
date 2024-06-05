@@ -26,6 +26,7 @@ class ObfuscateContactsCommand extends Command
 		$dataDirectory = dirname(dirname(__DIR__)).'/data';
 		$timestamp = $input->getArgument('timestamp');
 		$faker = Faker::create('nl_NL');
+		$fakerEN = Faker::create();
 		
 		$expectedHeaders = [
 			'First name',
@@ -45,7 +46,7 @@ class ObfuscateContactsCommand extends Command
 			$obfuscatedCsvLine = $contactCsvLine;
 			
 			$obfuscatedCsvLine['First name']     = $obfuscatedCsvLine['First name'] !== '' ?     $faker->firstName()  : '';
-			$obfuscatedCsvLine['Last name']      = $obfuscatedCsvLine['Last name'] !== '' ?      $faker->lastName()  : '';
+			$obfuscatedCsvLine['Last name']      = $obfuscatedCsvLine['Last name'] !== '' ?      $fakerEN->lastName()  : '';
 			$obfuscatedCsvLine['Telephone']      = $obfuscatedCsvLine['Telephone'] !== '' ?      $faker->phoneNumber()  : '';
 			$obfuscatedCsvLine['Email']          = $obfuscatedCsvLine['Email'] !== '' ?          $faker->safeEmail()  : '';
 			$obfuscatedCsvLine['Address line 1'] = $obfuscatedCsvLine['Address line 1'] !== '' ? $faker->streetName(). ' '.$faker->randomNumber(4) : '';
