@@ -19,11 +19,6 @@ use Symfony\Component\Console\Question\ConfirmationQuestion;
 /**
  * show duplicates:
  * - email address
- * - membership number
- * - multiple members
- * - @todo physical address
- * - @todo phone number
- * - @todo full name
  */
 
 #[AsCommand(name: 'insight-duplicate-contacts')]
@@ -165,51 +160,6 @@ class InsightDuplicateContactsCommand extends Command
 		if ($this->getHelper('question')->ask($input, $output, new ConfirmationQuestion('<question>Debug? [y/N]</question> ', false)) === true) {
 			print_r($debug);
 		}
-		
-		return Command::SUCCESS;
-		
-		/**
-		 * @todo membership number
-		 */
-		$duplicatesNumber = [];
-		foreach ($memberCsvLines as $memberCsvLine) {
-			$emailAddress = $memberCsvLine['lid_key'];
-			
-			if (isset($duplicatesNumber[$emailAddress]) === false) {
-				$duplicatesNumber[$emailAddress] = [];
-			}
-			
-			$duplicatesNumber[$emailAddress][] = $memberCsvLine;
-		}
-		
-		print_r($duplicatesNumber);
-		$output->writeln('Duplicates number: '.count($duplicatesNumber));
-		
-		return Command::SUCCESS;
-		
-		/**
-		 * @todo multiple members
-		 */
-		$duplicatesMember = [];
-		$memberHolder = [];
-		foreach ($memberCsvLines as $memberCsvLine) {
-			$responsibleId = $memberCsvLine['lid_vrw_id'];
-			$responsibleCsvLine = $responsibleMappingById[$responsibleId];
-			
-			// found duplicate
-			if (isset($memberHolder[$responsibleId])) {
-				if (isset($duplicatesMember[$responsibleId]) === false) {
-					$duplicatesMember[$responsibleId] = [];
-				}
-				
-				$duplicatesMember[$responsibleId][] = $memberCsvLine;
-			}
-			
-			$memberHolder[$responsibleId] = $memberCsvLine;
-		}
-		
-		print_r($duplicatesMember);
-		$output->writeln('Duplicates member: '.count($duplicatesMember));
 		
 		return Command::SUCCESS;
 	}
