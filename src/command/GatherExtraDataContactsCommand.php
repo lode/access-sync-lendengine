@@ -14,6 +14,7 @@ use Symfony\Component\Console\Output\OutputInterface;
 
 /**
  * @todo figure out which member is the active one
+ * @todo convert staff to admin
  */
 
 #[AsCommand(name: 'gather-extra-data-contacts')]

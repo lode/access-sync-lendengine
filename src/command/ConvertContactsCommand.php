@@ -13,13 +13,14 @@ use Symfony\Component\Console\Attribute\AsCommand;
 use Symfony\Component\Console\Command\Command;
 use Symfony\Component\Console\Input\InputInterface;
 use Symfony\Component\Console\Output\OutputInterface;
+use Symfony\Component\Console\Question\ConfirmationQuestion;
 
 #[AsCommand(name: 'convert-contacts')]
 class ConvertContactsCommand extends Command
 {
-	private const MEMBER_STATUS_ACTIVE   = 1;
-	private const MEMBER_STATUS_CANCELED = 2;
-	private const MEMBER_STATUS_INACTIVE = 3;
+	private const MEMBER_STATUS_ACTIVE   = '1';
+	private const MEMBER_STATUS_CANCELED = '2';
+	private const MEMBER_STATUS_INACTIVE = '3';
 	
 	protected function execute(InputInterface $input, OutputInterface $output): int
 	{
@@ -84,23 +85,50 @@ class ConvertContactsCommand extends Command
 		}
 		
 		$responsibleMemberMapping = [];
+		$nonActiveResponsibleIds = [];
 		foreach ($memberCsvLines as $memberCsvLine) {
 			$responsibleId = $memberCsvLine['lid_vrw_id'];
+			if ($responsibleId === '') {
+				continue;
+			}
+			
+			$memberStatusId = $memberCsvLine['lid_lis_id'];
+			if ($memberStatusId !== self::MEMBER_STATUS_ACTIVE) {
+				$nonActiveResponsibleIds[] = $responsibleId;
+				continue;
+			}
 			
 			if (isset($responsibleMemberMapping[$responsibleId])) {
-				// @todo figure out which member is the active one
+				throw new \Exception('multiple active members found');
 			}
 			
 			$responsibleMemberMapping[$responsibleId] = $memberCsvLine;
 		}
 		
+		$skipped = [
+			'not-active' => [],
+			'no-email'   => [],
+			'no-member'  => [],
+		];
+		
 		$contactsConverted = [];
 		foreach ($responsibleCsvLines as $responsibleCsvLine) {
 			// skip non-active members
 			$responsibleId = $responsibleCsvLine['vrw_id'];
+			if (isset($responsibleMemberMapping[$responsibleId]) === false) {
+				if (in_array($responsibleId, $nonActiveResponsibleIds, strict: true) === true) {
+					$skipped['not-active'][] = $responsibleCsvLine;
+					continue;
+				}
+				
+				$skipped['no-member'][] = $responsibleCsvLine;
+				continue;
+			}
+			
 			$memberCsvLine = $responsibleMemberMapping[$responsibleId];
-			$memberStatusId = $memberCsvLine['lid_lis_id'];
-			if ($memberStatusId !== self::MEMBER_STATUS_ACTIVE) {
+			
+			if ($responsibleCsvLine['vrw_email'] === '') {
+				$skipped['no-email'][] = $responsibleCsvLine;
 				continue;
 			}
 			
@@ -155,6 +183,18 @@ class ConvertContactsCommand extends Command
 			$contactsConverted[] = $contactConverted;
 		}
 		
+		$skipped = array_filter($skipped);
+		if ($skipped !== []) {
+			$output->writeln('<comment>Skipped:</comment>');
+			foreach ($skipped as $reason => $responsibles) {
+				$output->writeln('- '.$reason.': '.count($responsibles));
+			}
+			
+			if ($this->getHelper('question')->ask($input, $output, new ConfirmationQuestion('<question>Debug? [y/N]</question> ', false)) === true) {
+				print_r($skipped);
+			}
+		}
+		
 		/**
 		 * create lend engine item csv
 		 */
@@ -162,7 +202,7 @@ class ConvertContactsCommand extends Command
 		$convertedFileName = 'LendEngineContacts_'.time().'.csv';
 		file_put_contents($dataDirectory.'/'.$convertedFileName, $convertedCsv);
 		
-		$output->writeln('<info>Done. See ' . $convertedFileName . '</info>');
+		$output->writeln('<info>Done. ' . count($contactsConverted) . ' contacts stored in ' . $convertedFileName . '</info>');
 		
 		return Command::SUCCESS;
 	}

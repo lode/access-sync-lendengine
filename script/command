@@ -11,7 +11,7 @@ use Lode\AccessSyncLendEngine\command\GatherExtraDataContactsCommand;
 use Lode\AccessSyncLendEngine\command\GatherExtraDataItemPartsCommand;
 use Lode\AccessSyncLendEngine\command\GatherExtraDataItemsCommand;
 use Lode\AccessSyncLendEngine\command\GatherExtraDataMembershipsCommand;
-use Lode\AccessSyncLendEngine\command\InsightDuplicateContactsCommand;
+use Lode\AccessSyncLendEngine\command\InsightCommand;
 use Lode\AccessSyncLendEngine\command\ObfuscateContactsCommand;
 use Symfony\Component\Console\Application;
 
@@ -28,7 +28,7 @@ $application->add(new GatherExtraDataItemPartsCommand());
 $application->add(new GatherExtraDataMembershipsCommand());
 
 // other tooling
-$application->add(new InsightDuplicateContactsCommand());
+$application->add(new InsightCommand());
 $application->add(new ObfuscateContactsCommand());
 
 $application->run();

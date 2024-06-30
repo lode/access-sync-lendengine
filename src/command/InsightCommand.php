@@ -17,12 +17,13 @@ use Symfony\Component\Console\Output\OutputInterface;
 use Symfony\Component\Console\Question\ConfirmationQuestion;
 
 /**
- * show duplicates:
- * - email address
+ * show:
+ * - email addresses with duplicate contacts
+ * - contacts without email address
  */
 
-#[AsCommand(name: 'insight-duplicate-contacts')]
-class InsightDuplicateContactsCommand extends Command
+#[AsCommand(name: 'insight')]
+class InsightCommand extends Command
 {
 	protected function execute(InputInterface $input, OutputInterface $output): int
 	{
@@ -90,9 +91,9 @@ class InsightDuplicateContactsCommand extends Command
 		}
 		
 		/**
-		 * email address
+		 * email addresses with duplicate contacts
 		 */
-		$debug = [];
+		$cases = [];
 		$holder = [];
 		foreach ($memberCsvLines as $memberCsvLine) {
 			$responsibleId = $memberCsvLine['lid_vrw_id'];
@@ -129,36 +130,59 @@ class InsightDuplicateContactsCommand extends Command
 			
 			// found duplicate
 			if (isset($holder[$emailAddress])) {
-				if (isset($debug[$emailAddress]) === false) {
-					$debug[$emailAddress] = [
+				if (isset($cases[$emailAddress]) === false) {
+					$cases[$emailAddress] = [
 						$holder[$emailAddress],
 					];
 				}
 				
-				$debug[$emailAddress][] = [
-					'responsible'  => $responsibleMapped,
+				$cases[$emailAddress][] = [
+					'responsible' => $responsibleMapped,
 					'member' => $memberMapped,
 				];
 			}
 			
 			$holder[$emailAddress] = [
-				'responsible'  => $responsibleMapped,
+				'responsible' => $responsibleMapped,
 				'member' => $memberMapped,
 			];
 		}
 		
 		$info = [];
-		foreach ($debug as $emailAddress => $records) {
+		foreach ($cases as $emailAddress => $records) {
 			$info[] = '- '.$emailAddress.':';
 			foreach ($records as $record) {
 				$info[] = '  - #'.$record['member']['Lid nummer'].' '.$record['member']['Lid type'].': '.$record['member']['Lid omschrijving'];
 			}
 		}
 		
-		$output->writeln('Duplicates email: '.count($debug));
+		$output->writeln('Duplicates email: '.count($cases));
 		$output->writeln(implode(PHP_EOL, $info));
+		$output->writeln('<comment>These need to be manually corrected before or after importing.</comment>');
 		if ($this->getHelper('question')->ask($input, $output, new ConfirmationQuestion('<question>Debug? [y/N]</question> ', false)) === true) {
-			print_r($debug);
+			print_r($cases);
+		}
+		
+		/**
+		 * contacts without email address
+		 */
+		$cases = [];
+		foreach ($responsibleCsvLines as $responsibleCsvLine) {
+			if ($responsibleCsvLine['vrw_email'] === '') {
+				$cases[] = $responsibleCsvLine;
+			}
+		}
+		
+		$info = [];
+		foreach ($cases as $responsibleCsvLine) {
+			$info[] = '- #'.$responsibleCsvLine['vrw_id'].': '.$responsibleCsvLine['vrw_oms'];
+		}
+		
+		$output->writeln('Without email: '.count($cases));
+		$output->writeln(implode(PHP_EOL, $info));
+		$output->writeln('<comment>These need to be manually imported, or given an email address before converting.</comment>');
+		if ($this->getHelper('question')->ask($input, $output, new ConfirmationQuestion('<question>Debug? [y/N]</question> ', false)) === true) {
+			print_r($cases);
 		}
 		
 		return Command::SUCCESS;

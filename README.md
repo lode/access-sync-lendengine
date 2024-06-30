@@ -25,6 +25,7 @@ Sync data from [SpeelotheekSoftware's Access](https://speelotheeksoftware.nl/) t
 
 ### 2. Run scripts
 
+- Insight:                       `./script/console ./script/command insight`
 - Convert contacts:              `./script/console ./script/command convert-contacts`
 - Convert website CSVs:          `./script/console ./script/command convert-website-csvs <timestamp>`
 - Gather extra contacts data:    `./script/console ./script/command gather-extra-data-contacts`
