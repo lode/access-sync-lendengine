@@ -24,11 +24,22 @@ class GatherExtraDataContactsCommand extends Command
 		$service = new ConvertCsvService();
 		$dataDirectory = dirname(dirname(__DIR__)).'/data';
 		
-		echo 'Reading responsibles ...'.PHP_EOL;
-		$responsibleCsvLines = $service->getExportCsv($dataDirectory.'/Verantwoordelijke.csv', (new ResponsibleSpecification())->getExpectedHeaders());
+		$service->requireInputCsvs(
+			$dataDirectory,
+			[
+				'Verantwoordelijke.csv',
+				'Lid.csv',
+			],
+			$output,
+		);
 		
-		echo 'Reading members ...'.PHP_EOL;
+		$responsibleCsvLines = $service->getExportCsv($dataDirectory.'/Verantwoordelijke.csv', (new ResponsibleSpecification())->getExpectedHeaders());
+		$output->writeln('Imported ' . count($responsibleCsvLines) . ' responsibles');
+		
 		$memberCsvLines = $service->getExportCsv($dataDirectory.'/Lid.csv', (new MemberSpecification())->getExpectedHeaders());
+		$output->writeln('Imported ' . count($memberCsvLines) . ' members');
+		
+		$output->writeln('<info>Exporting contacts ...</info>');
 		
 		$responsibleMapping = [
 			'created_at' => 'vrw_toevoegdatum',
@@ -62,7 +73,10 @@ class GatherExtraDataContactsCommand extends Command
 			;";
 		}
 		
-		file_put_contents($dataDirectory.'/LendEngineContacts_ExtraData_'.time().'.sql', implode(PHP_EOL, $contactQueries));
+		$convertedFileName = 'LendEngineContacts_ExtraData_'.time().'.sql';
+		file_put_contents($dataDirectory.'/'.$convertedFileName, implode(PHP_EOL, $contactQueries));
+		
+		$output->writeln('<info>Done. See ' . $convertedFileName . '</info>');
 		
 		return Command::SUCCESS;
 	}

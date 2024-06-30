@@ -4,14 +4,43 @@ declare(strict_types=1);
 
 namespace Lode\AccessSyncLendEngine\service;
 
+use Symfony\Component\Console\Output\OutputInterface;
+
 class ConvertCsvService {
-	public function getExportCsv(string $csvFileName, array $expectedHeaders, string $csvSeparator = ','): array
+	public function requireInputCsvs(string $fileDirectory, array $csvFileNames, OutputInterface $output): void
 	{
-		if (file_exists($csvFileName) === false) {
-			throw new \Exception(basename($csvFileName) . ' does not exists');
+		$fileDirectory = str_ends_with($fileDirectory, '/') ? $fileDirectory : $fileDirectory.'/';
+		
+		$found = [];
+		$missing = [];
+		foreach ($csvFileNames as $csvFileName) {
+			if (file_exists($fileDirectory.$csvFileName) === false) {
+				$missing[] = $csvFileName;
+			}
+			else {
+				$found[] = $csvFileName;
+			}
 		}
 		
-		$fileHandler = fopen($csvFileName, 'r');
+		if ($found !== []) {
+			$output->writeln('<info>Found for importing: '.implode(', ', $found).'</info>');
+		}
+		if ($missing !== []) {
+			$output->writeln('<error>Missing for importing: '.implode(', ', $missing).'</error>');
+			$output->writeln('<comment>Add those files in `data/`</comment>');
+			$output->writeln('');
+			
+			throw new \Exception('missing files for importing');
+		}
+	}
+	
+	public function getExportCsv(string $csvFilePath, array $expectedHeaders, string $csvSeparator = ','): array
+	{
+		if (file_exists($csvFilePath) === false) {
+			throw new \Exception(basename($csvFilePath) . ' does not exists');
+		}
+		
+		$fileHandler = fopen($csvFilePath, 'r');
 		$csvLines = [];
 		do {
 			$csvLine = fgetcsv($fileHandler, 0, $csvSeparator);
@@ -26,7 +55,6 @@ class ConvertCsvService {
 		if ($csvLines === [] || count($csvLines) === 1) {
 			throw new \Exception('Empty csv found');
 		}
-		echo 'Found '.(count($csvLines) - 1).' rows'.PHP_EOL;
 		
 		$csvHeaders = array_shift($csvLines);
 		if ($csvHeaders !== $expectedHeaders) {

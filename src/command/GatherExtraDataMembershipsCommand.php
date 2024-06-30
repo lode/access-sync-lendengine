@@ -18,14 +18,24 @@ class GatherExtraDataMembershipsCommand extends Command
 		$service = new ConvertCsvService();
 		$dataDirectory = dirname(dirname(__DIR__)).'/data';
 		
+		$service->requireInputCsvs(
+			$dataDirectory,
+			[
+				'Lid.csv',
+			],
+			$output,
+		);
+		
 		$memberMapping = [
 			'starts_at'         => 'lid_vanafdatum',
 			'expires_at'        => 'lid_einddatum',
 			'membership_number' => 'lid_key',
 		];
 		
-		echo 'Reading members ...'.PHP_EOL;
 		$memberCsvLines = $service->getExportCsv($dataDirectory.'/Lid.csv', (new MemberSpecification())->getExpectedHeaders());
+		$output->writeln('Imported ' . count($memberCsvLines) . ' members');
+		
+		$output->writeln('<info>Exporting memberships ...</info>');
 		
 		$membershipQueries = [];
 		foreach ($memberCsvLines as $memberCsvLine) {
@@ -51,7 +61,10 @@ class GatherExtraDataMembershipsCommand extends Command
 			;";
 		}
 		
+		$convertedFileName = 'LendEngineMemberships_ExtraData_'.time().'.sql';
 		file_put_contents($dataDirectory.'/LendEngineMemberships_ExtraData_'.time().'.sql', implode(PHP_EOL, $membershipQueries));
+		
+		$output->writeln('<info>Done. See ' . $convertedFileName . '</info>');
 		
 		return Command::SUCCESS;
 	}

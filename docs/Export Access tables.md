@@ -1,0 +1,34 @@
+# Export Access tables
+
+- open database met shift-toets ingedrukt
+- klik links bovenin op het pijltje naast 'Formulieren'
+- kies voor 'Tabellen'
+- scroll naar Verantwoordelijke, selecteer
+- klik bovenin de ribbon op 'Externe gegevens'
+- kies voor 'Tekstbestand'
+- blader naar een map die je kan onthouden, en gebruik `.csv` als extensie
+- _niet_ aanvinken van 'met opmaak en indeling'
+- in 'Wizard Tekst exporteren'
+	- gebruik specificatie
+		- klik links onderin op 'Geavanceerd...'
+		- klik rechts op 'Specificaties...'
+		- selecteer 'CSV Exportspecificatie', en klik 'Openen'
+	- handmatig opnieuw
+		- niet standaard goed
+			- 'Scheidingsteken veld': `,`
+			- 'Decimaalsymbool': `.` (geen komma om conflicten te voorkomen net 'Scheidingsteken veld')
+			- 'Codetabel': `Unicode (UTF-8)`
+			- 'Datumvolgorde': `JMD`
+		- standaard al goed
+			- 'Gescheiden', niet 'Vaste breedte'
+			- 'Tekstscheidingsteken': `"`
+			- 'Taal': `Nederlands`
+			- 'Datumscheidingsteken': `-`
+			- 'Tijdscheidingsteken': `:`
+			- 'Jaar met vier cijfers': aangevinkt
+			- 'Voorloopnullen in datums': uitgevinkt
+	- kies 'OK'
+	- kies 'Volgende'
+	- 'Ook veldnamen in de eerste rij': aanvinken
+	- kies 'Volgende'
+	- kies 'Voltooien'

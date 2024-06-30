@@ -45,14 +45,26 @@ class ConvertWebsiteCsvsCommand extends Command
 		$csvTimestamp = $input->getArgument('csvTimestamp');
 		$csvSeparator = ';';
 		
-		echo 'Reading articles ...'.PHP_EOL;
+		$service->requireInputCsvs(
+			$dataDirectory,
+			[
+				'Artikelen_'.$csvTimestamp.'.csv',
+				'ArtikelTypes_'.$csvTimestamp.'.csv',
+				'Merken_'.$csvTimestamp.'.csv',
+			],
+			$output,
+		);
+		
 		$articleCsvLines = $service->getExportCsv($dataDirectory.'/Artikelen_'.$csvTimestamp.'.csv', (new WebsiteArticleSpecification())->getExpectedHeaders(), $csvSeparator);
+		$output->writeln('Imported ' . count($articleCsvLines) . ' articles');
 		
-		echo 'Reading article types ...'.PHP_EOL;
 		$articleTypeCsvLines = $service->getExportCsv($dataDirectory.'/ArtikelTypes_'.$csvTimestamp.'.csv', (new WebsiteArticleTypeSpecification())->getExpectedHeaders(), $csvSeparator);
+		$output->writeln('Imported ' . count($articleTypeCsvLines) . ' article types');
 		
-		echo 'Reading brands ...'.PHP_EOL;
 		$brandCsvLines = $service->getExportCsv($dataDirectory.'/Merken_'.$csvTimestamp.'.csv', (new WebsiteBrandSpecification())->getExpectedHeaders(), $csvSeparator);
+		$output->writeln('Imported ' . count($brandCsvLines) . ' brands');
+		
+		$output->writeln('<info>Exporting items ...</info>');
 		
 		/**
 		 * prepare article type and brand values
@@ -154,7 +166,10 @@ class ConvertWebsiteCsvsCommand extends Command
 		 * create lend engine item csv
 		 */
 		$convertedCsv = $service->createImportCsv($itemsConverted);
-		file_put_contents($dataDirectory.'/LendEngineItems_'.$csvTimestamp.'_'.time().'.csv', $convertedCsv);
+		$convertedFileName = 'LendEngineItems_'.$csvTimestamp.'_'.time().'.csv';
+		file_put_contents($dataDirectory.'/'.$convertedFileName, $convertedCsv);
+		
+		$output->writeln('<info>Done. See ' . $convertedFileName . '</info>');
 		
 		return Command::SUCCESS;
 	}

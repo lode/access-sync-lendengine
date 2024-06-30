@@ -26,6 +26,17 @@ class ConvertContactsCommand extends Command
 		$service = new ConvertCsvService();
 		$dataDirectory = dirname(dirname(__DIR__)).'/data';
 		
+		$service->requireInputCsvs(
+			$dataDirectory,
+			[
+				'Verantwoordelijke.csv',
+				'Straat.csv',
+				'Plaats.csv',
+				'Lid.csv',
+			],
+			$output,
+		);
+		
 		/**
 		 * get access file contents
 		 */
@@ -45,17 +56,19 @@ class ConvertContactsCommand extends Command
 			'lid_lis_id' => 'is_active',
 		];
 		
-		echo 'Reading responsibles ...'.PHP_EOL;
 		$responsibleCsvLines = $service->getExportCsv($dataDirectory.'/Verantwoordelijke.csv', (new ResponsibleSpecification())->getExpectedHeaders());
+		$output->writeln('Imported ' . count($responsibleCsvLines) . ' responsibles');
 		
-		echo 'Reading streets ...'.PHP_EOL;
 		$streetCsvLines = $service->getExportCsv($dataDirectory.'/Straat.csv', (new StreetSpecification())->getExpectedHeaders());
+		$output->writeln('Imported ' . count($streetCsvLines) . ' streets');
 		
-		echo 'Reading places ...'.PHP_EOL;
 		$placeCsvLines = $service->getExportCsv($dataDirectory.'/Plaats.csv', (new PlaceSpecification())->getExpectedHeaders());
+		$output->writeln('Imported ' . count($placeCsvLines) . ' places');
 		
-		echo 'Reading members ...'.PHP_EOL;
 		$memberCsvLines = $service->getExportCsv($dataDirectory.'/Lid.csv', (new MemberSpecification())->getExpectedHeaders());
+		$output->writeln('Imported ' . count($memberCsvLines) . ' members');
+		
+		$output->writeln('<info>Exporting contacts ...</info>');
 		
 		$placeMapping = [];
 		foreach ($placeCsvLines as $placeCsvLine) {
@@ -146,7 +159,10 @@ class ConvertContactsCommand extends Command
 		 * create lend engine item csv
 		 */
 		$convertedCsv = $service->createImportCsv($contactsConverted);
-		file_put_contents($dataDirectory.'/LendEngineContacts_'.time().'.csv', $convertedCsv);
+		$convertedFileName = 'LendEngineContacts_'.time().'.csv';
+		file_put_contents($dataDirectory.'/'.$convertedFileName, $convertedCsv);
+		
+		$output->writeln('<info>Done. See ' . $convertedFileName . '</info>');
 		
 		return Command::SUCCESS;
 	}

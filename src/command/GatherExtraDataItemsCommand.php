@@ -19,13 +19,23 @@ class GatherExtraDataItemsCommand extends Command
 		$service = new ConvertCsvService();
 		$dataDirectory = dirname(dirname(__DIR__)).'/data';
 		
+		$service->requireInputCsvs(
+			$dataDirectory,
+			[
+				'Artikel.csv',
+			],
+			$output,
+		);
+		
 		$articleMapping = [
 			'created_at' => 'art_aankoopdatum',
 			'sku'        => 'art_key',
 		];
 		
-		echo 'Reading artikelen ...'.PHP_EOL;
 		$articleCsvLines = $service->getExportCsv($dataDirectory.'/Artikel.csv', (new ArticleSpecification())->getExpectedHeaders());
+		$output->writeln('Imported ' . count($articleCsvLines) . ' artikelen');
+		
+		$output->writeln('<info>Exporting items ...</info>');
 		
 		$itemQueries = [];
 		foreach ($articleCsvLines as $articleCsvLine) {
@@ -41,7 +51,10 @@ class GatherExtraDataItemsCommand extends Command
 			;";
 		}
 		
-		file_put_contents($dataDirectory.'/LendEngineItems_ExtraData_'.time().'.sql', implode(PHP_EOL, $itemQueries));
+		$convertedFileName = 'LendEngineItems_ExtraData_'.time().'.sql';
+		file_put_contents($dataDirectory.'/'.$convertedFileName, implode(PHP_EOL, $itemQueries));
+		
+		$output->writeln('<info>Done. See ' . $convertedFileName . '</info>');
 		
 		return Command::SUCCESS;
 	}

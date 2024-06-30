@@ -17,13 +17,18 @@ use Symfony\Component\Console\Application;
 
 $application = new Application();
 
+// convert to csvs ready for importing into lend engine admin
 $application->add(new ConvertContactsCommand());
 $application->add(new ConvertWebsiteCsvsCommand());
-$application->add(new InsightDuplicateContactsCommand());
+
+// gather extra data for importing into lend engine as raw sql
 $application->add(new GatherExtraDataContactsCommand());
 $application->add(new GatherExtraDataItemsCommand());
 $application->add(new GatherExtraDataItemPartsCommand());
 $application->add(new GatherExtraDataMembershipsCommand());
+
+// other tooling
+$application->add(new InsightDuplicateContactsCommand());
 $application->add(new ObfuscateContactsCommand());
 
 $application->run();

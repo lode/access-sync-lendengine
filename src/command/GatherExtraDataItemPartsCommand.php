@@ -20,17 +20,28 @@ class GatherExtraDataItemPartsCommand extends Command
 		$service = new ConvertCsvService();
 		$dataDirectory = dirname(dirname(__DIR__)).'/data';
 		
+		$service->requireInputCsvs(
+			$dataDirectory,
+			[
+				'Onderdeel.csv',
+				'Artikel.csv',
+			],
+			$output,
+		);
+		
 		$partMapping = [
 			'article_id'       => 'ond_art_id',
 			'part_description' => ['ond_oms', 'ond_nadereoms'],
 			'part_count'       => 'ond_aantal',
 		];
 		
-		echo 'Reading onderdelen ...'.PHP_EOL;
 		$partCsvLines = $service->getExportCsv($dataDirectory.'/Onderdeel.csv', (new PartSpecification())->getExpectedHeaders());
+		$output->writeln('Imported ' . count($partCsvLines). ' onderdelen');
 		
-		echo 'Reading artikelen ...'.PHP_EOL;
 		$articleCsvLines = $service->getExportCsv($dataDirectory.'/Artikel.csv', (new ArticleSpecification())->getExpectedHeaders());
+		$output->writeln('Imported ' . count($articleCsvLines). ' artikelen');
+		
+		$output->writeln('<info>Exporting parts ...</info>');
 		
 		$articleSkuMapping = [];
 		foreach ($articleCsvLines as $articleCsvLine) {
@@ -68,9 +79,14 @@ class GatherExtraDataItemPartsCommand extends Command
 			;";
 		}
 		
+		$output->writeln('<info>Done. See:</info>');
+		
 		$itemPartQueryChunks = array_chunk($itemPartQueries, 2500);
 		foreach ($itemPartQueryChunks as $index => $itemPartQueryChunk) {
-			file_put_contents($dataDirectory.'/LendEngineItemParts_ExtraData_'.time().'_chunk_'.($index+1).'.sql', implode(PHP_EOL, $itemPartQueryChunk));
+			$convertedFileName = 'LendEngineItemParts_ExtraData_'.time().'_chunk_'.($index+1).'.sql';
+			file_put_contents($dataDirectory.'/'.$convertedFileName, implode(PHP_EOL, $itemPartQueryChunk));
+			
+			$output->writeln('- '.$convertedFileName);
 		}
 		
 		return Command::SUCCESS;

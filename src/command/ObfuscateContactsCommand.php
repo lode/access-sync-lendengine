@@ -28,6 +28,14 @@ class ObfuscateContactsCommand extends Command
 		$faker = Faker::create('nl_NL');
 		$fakerEN = Faker::create();
 		
+		$service->requireInputCsvs(
+			$dataDirectory,
+			[
+				'LendEngineContacts_'.$timestamp.'.csv',
+			],
+			$output,
+		);
+		
 		$expectedHeaders = [
 			'First name',
 			'Last name',
@@ -40,6 +48,9 @@ class ObfuscateContactsCommand extends Command
 			'custom_notes',
 		];
 		$contactsCsvLines = $service->getExportCsv($dataDirectory.'/LendEngineContacts_'.$timestamp.'.csv', $expectedHeaders, $csvSeparator="\t");
+		$output->writeln('Imported ' . count($contactsCsvLines) . ' contacts');
+		
+		$output->writeln('<info>Obfuscating contacts ...</info>');
 		
 		$obfuscatedCsvLines = [];
 		foreach ($contactsCsvLines as $contactCsvLine) {
@@ -62,8 +73,11 @@ class ObfuscateContactsCommand extends Command
 			$obfuscatedCsvLines[] = $obfuscatedCsvLine;
 		}
 		
+		$convertedFileName = 'LendEngineContacts_'.$timestamp.'_obfuscated_'.time().'.csv';
 		$obfuscatedCsv = $service->createImportCsv($obfuscatedCsvLines);
-		file_put_contents($dataDirectory.'/LendEngineContacts_'.$timestamp.'_obfuscated_'.time().'.csv', $obfuscatedCsv);
+		file_put_contents($dataDirectory.'/'.$convertedFileName, $obfuscatedCsv);
+		
+		$output->writeln('<info>Done. See ' . $convertedFileName . '</info>');
 		
 		return Command::SUCCESS;
 	}

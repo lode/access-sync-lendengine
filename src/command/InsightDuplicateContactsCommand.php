@@ -28,6 +28,15 @@ class InsightDuplicateContactsCommand extends Command
 		$service = new ConvertCsvService();
 		$dataDirectory = dirname(dirname(__DIR__)).'/data';
 		
+		$service->requireInputCsvs(
+			$dataDirectory,
+			[
+				'Verantwoordelijke.csv',
+				'Lid.csv',
+			],
+			$output,
+		);
+		
 		/**
 		 * get access file contents
 		 */
@@ -118,13 +127,13 @@ class InsightDuplicateContactsCommand extends Command
 		];
 		$memberExpectedHeaders = array_keys($memberMapping);
 		
-		echo 'Reading responsibles ...'.PHP_EOL;
-		$responsibleCsvFilename = $dataDirectory.'/Verantwoordelijke.csv';
-		$responsibleCsvLines = $service->getExportCsv($responsibleCsvFilename, $responsibleExpectedHeaders);
+		$responsibleCsvLines = $service->getExportCsv($dataDirectory.'/Verantwoordelijke.csv', $responsibleExpectedHeaders);
+		$output->writeln('Imported ' . count($responsibleCsvLines) . ' responsibles');
 		
-		echo 'Reading members ...'.PHP_EOL;
-		$memberCsvFilename = $dataDirectory.'/Lid.csv';
-		$memberCsvLines = $service->getExportCsv($memberCsvFilename, $memberExpectedHeaders);
+		$memberCsvLines = $service->getExportCsv($dataDirectory.'/Lid.csv', $memberExpectedHeaders);
+		$output->writeln('Imported ' . count($memberCsvLines) . ' members');
+		
+		$output->writeln('<info>Exporting contacts ...</info>');
 		
 		/**
 		 * email address
