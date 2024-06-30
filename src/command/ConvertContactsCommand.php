@@ -49,7 +49,7 @@ class ConvertContactsCommand extends Command
 		$responsibleCsvLines = $service->getExportCsv($dataDirectory.'/Verantwoordelijke.csv', (new ResponsibleSpecification())->getExpectedHeaders());
 		
 		echo 'Reading streets ...'.PHP_EOL;
-		$streetCsvLines = $service->getExportCsv($dataDirectory.'/Straat.csv';, (new StreetSpecification())->getExpectedHeaders());
+		$streetCsvLines = $service->getExportCsv($dataDirectory.'/Straat.csv', (new StreetSpecification())->getExpectedHeaders());
 		
 		echo 'Reading places ...'.PHP_EOL;
 		$placeCsvLines = $service->getExportCsv($dataDirectory.'/Plaats.csv', (new PlaceSpecification())->getExpectedHeaders());

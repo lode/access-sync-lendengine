@@ -8,6 +8,7 @@ require dirname(__DIR__).'/vendor/autoload.php';
 use Lode\AccessSyncLendEngine\command\ConvertContactsCommand;
 use Lode\AccessSyncLendEngine\command\ConvertWebsiteCsvsCommand;
 use Lode\AccessSyncLendEngine\command\GatherExtraDataContactsCommand;
+use Lode\AccessSyncLendEngine\command\GatherExtraDataItemPartsCommand;
 use Lode\AccessSyncLendEngine\command\GatherExtraDataItemsCommand;
 use Lode\AccessSyncLendEngine\command\GatherExtraDataMembershipsCommand;
 use Lode\AccessSyncLendEngine\command\InsightDuplicateContactsCommand;
@@ -21,6 +22,7 @@ $application->add(new ConvertWebsiteCsvsCommand());
 $application->add(new InsightDuplicateContactsCommand());
 $application->add(new GatherExtraDataContactsCommand());
 $application->add(new GatherExtraDataItemsCommand());
+$application->add(new GatherExtraDataItemPartsCommand());
 $application->add(new GatherExtraDataMembershipsCommand());
 $application->add(new ObfuscateContactsCommand());
 

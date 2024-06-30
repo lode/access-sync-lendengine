@@ -43,7 +43,7 @@ class ConvertWebsiteCsvsCommand extends Command
 		 * get access file contents
 		 */
 		$csvTimestamp = $input->getArgument('csvTimestamp');
-		$csvSeparator = ';'
+		$csvSeparator = ';';
 		
 		echo 'Reading articles ...'.PHP_EOL;
 		$articleCsvLines = $service->getExportCsv($dataDirectory.'/Artikelen_'.$csvTimestamp.'.csv', (new WebsiteArticleSpecification())->getExpectedHeaders(), $csvSeparator);
