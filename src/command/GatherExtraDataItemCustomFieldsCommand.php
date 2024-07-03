@@ -5,7 +5,7 @@ declare(strict_types=1);
 namespace Lode\AccessSyncLendEngine\command;
 
 use Lode\AccessSyncLendEngine\service\ConvertCsvService;
-use Lode\AccessSyncLendEngine\specification\MemberSpecification;
+use Lode\AccessSyncLendEngine\specification\ArticleSpecification;
 use Lode\AccessSyncLendEngine\specification\MessageSpecification;
 use Symfony\Component\Console\Attribute\AsCommand;
 use Symfony\Component\Console\Command\Command;
@@ -40,7 +40,7 @@ class GatherExtraDataItemCustomFieldsCommand extends Command
 			'text'              => 'Mld_Oms',
 			'inventory_item_id' => 'Mld_Art_id',
 			'created_by'        => 'mld_mdw_id_toevoeg',
-			'created_at'        => 'Mld_GemeldDatum',
+			'created_at'        => ['Mld_GemeldDatum', 'mld_vanafdatum'],
 		];
 		
 		$messageCsvLines = $service->getExportCsv($dataDirectory.'/Melding.csv', (new MessageSpecification())->getExpectedHeaders());
@@ -59,20 +59,40 @@ class GatherExtraDataItemCustomFieldsCommand extends Command
 			$articleSkuMapping[$articleId] = $articleSku;
 		}
 		
-		$itemCustomFieldQueries = [];
+		$itemCustomFieldData = [];
 		foreach ($messageCsvLines as $messageCsvLine) {
+			// skip messages for contacts
+			if ($messageCsvLine[$messageMapping['inventory_item_id']] === '') {
+				continue;
+			}
+			
 			// @todo filter on Mld_Mls_id
 			
-			$text      = $messageCsvLine[$messageMapping['text']];
+			$text      = trim($messageCsvLine[$messageMapping['text']]);
 			$createdBy = $messageCsvLine[$messageMapping['created_by']]; // @todo convert from mld_mdw_id_toevoeg to contact_first|last_name
-			$createdAt = \DateTime::createFromFormat('Y-n-j H:i:s', $messageCsvLine[$messageMapping['created_at']]);
 			
-			$text = $createdAt->format('Y-m-d H:i:s').' '.$createdBy.': '.$text.PHP_EOL;
+			$createdAt = $messageCsvLine[$messageMapping['created_at'][0]];
+			if ($createdAt === '') {
+				$createdAt = $messageCsvLine[$messageMapping['created_at'][1]];
+			}
+			$createdAt = \DateTime::createFromFormat('Y-n-j H:i:s', $createdAt);
+			
+			$text = $createdAt->format('Y-m-d H:i:s').' '.$createdBy.': '.$text;
 			
 			$articleId  = $messageCsvLine[$messageMapping['inventory_item_id']];
 			$articleSku = $articleSkuMapping[$articleId];
 			
-			$customFieldId
+			if (isset($itemCustomFieldData[$articleSku]) === false) {
+				$itemCustomFieldData[$articleSku] = [];
+			}
+			
+			$itemCustomFieldData[$articleSku][] = $text;
+		}
+		
+		$itemCustomFieldQueries = [];
+		foreach ($itemCustomFieldData as $articleSku => $texts) {
+			$text = implode(PHP_EOL, $texts);
+			
 			$itemCustomFieldQueries[] = "
 				INSERT INTO `product_field_value` SET
 				`product_field_id` = ".$customFieldId."
@@ -86,8 +106,6 @@ class GatherExtraDataItemCustomFieldsCommand extends Command
 					)
 				),
 				`field_value` = '".str_replace("'", "\'", $text)."'
-				ON DUPLICATE KEY UPDATE
-				`field_value` = CONCAT(`field_value`, '\n', '".str_replace("'", "\'", $text)."')
 			;";
 		}
 		

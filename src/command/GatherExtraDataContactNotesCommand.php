@@ -11,6 +11,7 @@ use Symfony\Component\Console\Attribute\AsCommand;
 use Symfony\Component\Console\Command\Command;
 use Symfony\Component\Console\Input\InputInterface;
 use Symfony\Component\Console\Output\OutputInterface;
+use Symfony\Component\Console\Question\ConfirmationQuestion;
 
 #[AsCommand(name: 'gather-extra-data-contact-notes')]
 class GatherExtraDataContactNotesCommand extends Command
@@ -33,7 +34,7 @@ class GatherExtraDataContactNotesCommand extends Command
 			'text'       => 'Mld_Oms',
 			'contact_id' => 'Mld_Lid_id',
 			'created_by' => 'mld_mdw_id_toevoeg',
-			'created_at' => 'Mld_GemeldDatum',
+			'created_at' => ['Mld_GemeldDatum', 'mld_vanafdatum'],
 		];
 		
 		$messageCsvLines = $service->getExportCsv($dataDirectory.'/Melding.csv', (new MessageSpecification())->getExpectedHeaders());
@@ -54,11 +55,21 @@ class GatherExtraDataContactNotesCommand extends Command
 		
 		$contactNoteQueries = [];
 		foreach ($messageCsvLines as $messageCsvLine) {
+			// skip messages for items
+			if ($messageCsvLine[$messageMapping['contact_id']] === '') {
+				continue;
+			}
+			
 			// @todo filter on Mld_Mls_id
 			
-			$text      = $messageCsvLine[$messageMapping['text']];
+			$text      = trim($messageCsvLine[$messageMapping['text']]);
 			$createdBy = $messageCsvLine[$messageMapping['created_by']]; // @todo convert from mld_mdw_id_toevoeg to contact_id
-			$createdAt = \DateTime::createFromFormat('Y-n-j H:i:s', $messageCsvLine[$messageMapping['created_at']]);
+			
+			$createdAt = $messageCsvLine[$messageMapping['created_at'][0]];
+			if ($createdAt === '') {
+				$createdAt = $messageCsvLine[$messageMapping['created_at'][1]];
+			}
+			$createdAt = \DateTime::createFromFormat('Y-n-j H:i:s', $createdAt);
 			
 			$memberId         = $messageCsvLine[$messageMapping['contact_id']];
 			$membershipNumber = $membershipNumberMapping[$memberId];

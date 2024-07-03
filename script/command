@@ -7,7 +7,9 @@ require dirname(__DIR__).'/vendor/autoload.php';
 
 use Lode\AccessSyncLendEngine\command\ConvertContactsCommand;
 use Lode\AccessSyncLendEngine\command\ConvertWebsiteCsvsCommand;
+use Lode\AccessSyncLendEngine\command\GatherExtraDataContactNotesCommand;
 use Lode\AccessSyncLendEngine\command\GatherExtraDataContactsCommand;
+use Lode\AccessSyncLendEngine\command\GatherExtraDataItemCustomFieldsCommand;
 use Lode\AccessSyncLendEngine\command\GatherExtraDataItemPartsCommand;
 use Lode\AccessSyncLendEngine\command\GatherExtraDataItemsCommand;
 use Lode\AccessSyncLendEngine\command\GatherExtraDataMembershipsCommand;
@@ -23,7 +25,9 @@ $application->add(new ConvertWebsiteCsvsCommand());
 
 // gather extra data for importing into lend engine as raw sql
 $application->add(new GatherExtraDataContactsCommand());
+$application->add(new GatherExtraDataContactNotesCommand());
 $application->add(new GatherExtraDataItemsCommand());
+$application->add(new GatherExtraDataItemCustomFieldsCommand());
 $application->add(new GatherExtraDataItemPartsCommand());
 $application->add(new GatherExtraDataMembershipsCommand());
 
