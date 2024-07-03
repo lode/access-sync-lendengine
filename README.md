@@ -19,8 +19,8 @@ Sync data from [SpeelotheekSoftware's Access](https://speelotheeksoftware.nl/) t
 
 ### 1. Export data from SpeelotheekSoftware's Access
 
-- [Export website CSVs](docs/Export website CSVs.md)
-- [Export Access tables](docs/Export Access tables.md)
+- [Export website CSVs](/docs/Export%20website%20CSVs.md)
+- [Export Access tables](/docs/Export%20Access%20tables.md)
 - Place all exported files in `data/`.
 
 ### 2. Run scripts
