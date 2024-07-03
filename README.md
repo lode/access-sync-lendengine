@@ -35,6 +35,8 @@ Run each command with `./script/console ./script/command <commandName> <optional
 | Parts | `gather-extra-data-item-parts` | Count, description |
 | Memberships | `gather-extra-data-memberships` + `membershipId` + `membershipPrice` | Contact <> Subscription, period |
 | Contacts extras | `gather-extra-data-contacts` | Membership number and contact created |
+| Contact notes | `gather-extra-data-contact-notes` | Messages ("meldingen") |
+| Item custom fields | `gather-extra-data-item-custom-fields` + `customFieldId` | Messages ("meldingen") |
 | Items extras | `gather-extra-data-items` | Item created |
 
 Output files `LendEngine*.csv` & `LendEngine*.sql` will be added in `data/`.
