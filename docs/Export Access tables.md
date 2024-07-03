@@ -3,7 +3,7 @@
 - open database met shift-toets ingedrukt
 - klik links bovenin op het pijltje naast 'Formulieren'
 - kies voor 'Tabellen'
-- scroll naar Verantwoordelijke, selecteer
+- scroll naar `Verantwoordelijke` (of een andere tabel), selecteer
 - klik bovenin de ribbon op 'Externe gegevens'
 - kies voor 'Tekstbestand'
 - blader naar een map die je kan onthouden, en gebruik `.csv` als extensie

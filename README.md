@@ -25,23 +25,34 @@ Sync data from [SpeelotheekSoftware's Access](https://speelotheeksoftware.nl/) t
 
 ### 2. Run scripts
 
-- Insight:                       `./script/console ./script/command insight`
-- Convert contacts:              `./script/console ./script/command convert-contacts`
-- Convert website CSVs:          `./script/console ./script/command convert-website-csvs <timestamp>`
-- Gather extra contacts data:    `./script/console ./script/command gather-extra-data-contacts`
-- Gather extra items data:       `./script/console ./script/command gather-extra-data-items`
-- Gather extra parts data:       `./script/console ./script/command gather-extra-data-item-parts`
-- Gather extra memberships data: `./script/console ./script/command gather-extra-data-memberships`
+| Data | Command |
+| --- | --- |
+| Get insight | `./script/console ./script/command insight` |
+| Contacts | `./script/console ./script/command convert-contacts` |
+| Items | `./script/console ./script/command convert-website-csvs <timestamp>` |
+| Contacts extras | `./script/console ./script/command gather-extra-data-contacts` |
+| Items extras | `./script/console ./script/command gather-extra-data-items` |
+| Parts extras | `./script/console ./script/command gather-extra-data-item-parts` |
+| Memberships extras | `./script/console ./script/command gather-extra-data-memberships` |
 
 Output files `LendEngine*.csv` & `LendEngine*.sql` will be added in `data/`.
 
-### 3. Import item & member data via Lend Engine's CSV import admin
+### 3. Import CSVs in Lend Engine admin
 
-This can be used for the CSVs output from the scripts
+The CSVs from the above scripts (`LendEngine*.csv` for items & contacts) can be imported via Lend Engine's CSV import admin.
 
-### 4. Ask Lend Engine support to import for extra data via SQLs
+- Import items via Admin > Items > Bulk update (/admin/import/items/)
+	- Copy the contents of the output of the `convert-website-csvs` command
+	- Enable "Create new items where code is not found"
+- Import contacts via Admin > Settings > Import contacts (/admin/import/contacts/)
+	- Copy the contents of the output of the `convert-contacts` command
+	- Don't copy the header row along
+	- Import 10 contacts at once because of performance issues
 
-Some scripts output SQL instead of CSV
+### 4. Import SQLs via Lend Engine support
+
+The SQLs from the above scripts (`LendEngine*.sql`) can't be imported via Lend Engine admin.
+Contact Lend Engine support and ask to import the SQLs for you.
 
 
 ## Development
