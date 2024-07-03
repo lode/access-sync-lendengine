@@ -25,15 +25,17 @@ Sync data from [SpeelotheekSoftware's Access](https://speelotheeksoftware.nl/) t
 
 ### 2. Run scripts
 
-| Data | Command |
-| --- | --- |
-| Get insight | `./script/console ./script/command insight` |
-| Contacts | `./script/console ./script/command convert-contacts` |
-| Items | `./script/console ./script/command convert-website-csvs <timestamp>` |
-| Contacts extras | `./script/console ./script/command gather-extra-data-contacts` |
-| Items extras | `./script/console ./script/command gather-extra-data-items` |
-| Parts extras | `./script/console ./script/command gather-extra-data-item-parts` |
-| Memberships extras | `./script/console ./script/command gather-extra-data-memberships` |
+Run each command with `./script/console ./script/command <commandName> <optionalExtraArguments>`.
+
+| Data | Command | Contents |
+| --- | --- | --- |
+| Get insight | `insight` | Contacts without email address and contacts which share an email address |
+| Contacts | `convert-contacts` | Contact basics: name, email, phone, address, etc. |
+| Items | `convert-website-csvs` + `csvTimestamp` | Item basics: name, code, category, brand, price, etc. |
+| Parts | `gather-extra-data-item-parts` | Count, description |
+| Memberships | `gather-extra-data-memberships` | Contact <> Subscription, period |
+| Contacts extras | `gather-extra-data-contacts` | Membership number and contact created |
+| Items extras | `gather-extra-data-items` | Item created |
 
 Output files `LendEngine*.csv` & `LendEngine*.sql` will be added in `data/`.
 
