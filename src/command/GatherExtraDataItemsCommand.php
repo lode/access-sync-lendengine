@@ -41,7 +41,7 @@ class GatherExtraDataItemsCommand extends Command
 		foreach ($articleCsvLines as $articleCsvLine) {
 			$createdAt = \DateTime::createFromFormat('Y-n-j H:i:s', $articleCsvLine[$articleMapping['created_at']]);
 			$updatedAt = $createdAt;
-			$sku       = $articleCsvLine[$articleMapping['membership_number']];
+			$sku       = $articleCsvLine[$articleMapping['sku']];
 			
 			$itemQueries[] = "
 				UPDATE `inventory_item` SET
@@ -54,7 +54,7 @@ class GatherExtraDataItemsCommand extends Command
 		$convertedFileName = 'LendEngineItems_ExtraData_'.time().'.sql';
 		file_put_contents($dataDirectory.'/'.$convertedFileName, implode(PHP_EOL, $itemQueries));
 		
-		$output->writeln('<info>Done. See ' . $convertedFileName . '</info>');
+		$output->writeln('<info>Done. ' . count($itemQueries) . ' SQLs for items stored in ' . $convertedFileName . '</info>');
 		
 		return Command::SUCCESS;
 	}

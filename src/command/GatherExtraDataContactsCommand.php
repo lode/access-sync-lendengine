@@ -20,6 +20,10 @@ use Symfony\Component\Console\Output\OutputInterface;
 #[AsCommand(name: 'gather-extra-data-contacts')]
 class GatherExtraDataContactsCommand extends Command
 {
+	private const MEMBER_STATUS_ACTIVE   = '1';
+	private const MEMBER_STATUS_CANCELED = '2';
+	private const MEMBER_STATUS_INACTIVE = '3';
+	
 	protected function execute(InputInterface $input, OutputInterface $output): int
 	{
 		$service = new ConvertCsvService();
@@ -52,14 +56,37 @@ class GatherExtraDataContactsCommand extends Command
 		];
 		
 		$responsibleMemberMapping = [];
+		$nonActiveResponsibleIds = [];
 		foreach ($memberCsvLines as $memberCsvLine) {
 			$responsibleId = $memberCsvLine['lid_vrw_id'];
+			if ($responsibleId === '') {
+				continue;
+			}
+			
+			$memberStatusId = $memberCsvLine['lid_lis_id'];
+			if ($memberStatusId !== self::MEMBER_STATUS_ACTIVE) {
+				$nonActiveResponsibleIds[] = $responsibleId;
+				continue;
+			}
+			
+			if (isset($responsibleMemberMapping[$responsibleId])) {
+				throw new \Exception('multiple active members found');
+			}
+			
 			$responsibleMemberMapping[$responsibleId] = $memberCsvLine;
 		}
 		
 		$contactQueries = [];
 		foreach ($responsibleCsvLines as $responsibleCsvLine) {
+			// skip non-active members
 			$responsibleId = $responsibleCsvLine['vrw_id'];
+			if (isset($responsibleMemberMapping[$responsibleId]) === false) {
+				continue;
+			}
+			if ($responsibleCsvLine['vrw_email'] === '') {
+				continue;
+			}
+			
 			$memberCsvLine = $responsibleMemberMapping[$responsibleId];
 			
 			$membershipNumber = $memberCsvLine[$memberMapping['membership_number']];
@@ -77,7 +104,7 @@ class GatherExtraDataContactsCommand extends Command
 		$convertedFileName = 'LendEngineContacts_ExtraData_'.time().'.sql';
 		file_put_contents($dataDirectory.'/'.$convertedFileName, implode(PHP_EOL, $contactQueries));
 		
-		$output->writeln('<info>Done. See ' . $convertedFileName . '</info>');
+		$output->writeln('<info>Done. ' . count($contactQueries) . ' SQLs for contacts stored in ' . $convertedFileName . '</info>');
 		
 		return Command::SUCCESS;
 	}

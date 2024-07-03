@@ -169,7 +169,7 @@ class ConvertWebsiteCsvsCommand extends Command
 		$convertedFileName = 'LendEngineItems_'.$csvTimestamp.'_'.time().'.csv';
 		file_put_contents($dataDirectory.'/'.$convertedFileName, $convertedCsv);
 		
-		$output->writeln('<info>Done. See ' . $convertedFileName . '</info>');
+		$output->writeln('<info>Done. ' . count($itemsConverted) . ' items stored in ' . $convertedFileName . '</info>');
 		
 		return Command::SUCCESS;
 	}

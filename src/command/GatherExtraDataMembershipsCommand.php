@@ -5,6 +5,7 @@ declare(strict_types=1);
 namespace Lode\AccessSyncLendEngine\command;
 
 use Lode\AccessSyncLendEngine\service\ConvertCsvService;
+use Lode\AccessSyncLendEngine\specification\MemberSpecification;
 use Symfony\Component\Console\Attribute\AsCommand;
 use Symfony\Component\Console\Command\Command;
 use Symfony\Component\Console\Input\InputInterface;
@@ -40,8 +41,11 @@ class GatherExtraDataMembershipsCommand extends Command
 		$membershipQueries = [];
 		foreach ($memberCsvLines as $memberCsvLine) {
 			$membershipNumber = $memberCsvLine[$memberMapping['membership_number']];
-			$startsAt         = \DateTime::createFromFormat('Y-n-j H:i:s', $responsibleCsvLine[$responsibleMapping['starts_at']]);
-			$expiresAt        = \DateTime::createFromFormat('Y-n-j H:i:s', $responsibleCsvLine[$responsibleMapping['expires_at']]);
+			$startsAt         = \DateTime::createFromFormat('Y-n-j H:i:s', $memberCsvLine[$memberMapping['starts_at']]);
+			$expiresAt        = null;
+			if ($memberCsvLine[$memberMapping['expires_at']] !== '') {
+				$expiresAt = \DateTime::createFromFormat('Y-n-j H:i:s', $memberCsvLine[$memberMapping['expires_at']]);
+			}
 			
 			$membershipQueries[] = "
 				INSERT INTO `membership` SET
@@ -54,17 +58,16 @@ class GatherExtraDataMembershipsCommand extends Command
 				`created_by` = 1,
 				`price` = '32,50',
 				`created_at` = NOW(),
-				`starts_at` = '".$createdAt->format('Y-m-d H:i:s')."',
-				`expires_at` = '".$expiresAt->format('Y-m-d H:i:s')."'
+				`starts_at` = '".$startsAt->format('Y-m-d H:i:s')."',
+				`expires_at` = ".($expiresAt === null ? 'NULL' : "'".$expiresAt->format('Y-m-d H:i:s')."'")."
 				`status` = 'ACTIVE'
-				WHERE `email` = '".$email."'
 			;";
 		}
 		
 		$convertedFileName = 'LendEngineMemberships_ExtraData_'.time().'.sql';
 		file_put_contents($dataDirectory.'/LendEngineMemberships_ExtraData_'.time().'.sql', implode(PHP_EOL, $membershipQueries));
 		
-		$output->writeln('<info>Done. See ' . $convertedFileName . '</info>');
+		$output->writeln('<info>Done. ' . count($membershipQueries) . ' SQLs for memberships stored in ' . $convertedFileName . '</info>');
 		
 		return Command::SUCCESS;
 	}
