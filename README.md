@@ -59,6 +59,18 @@ The SQLs from the above scripts (`LendEngine*.sql`) can't be imported via Lend E
 Contact Lend Engine support and ask to import the SQLs for you.
 
 
+## To Do
+
+- Part mutations (waiting for LE implementation)
+- Filter message (contact note / item custom field) on status (mls)
+- Fix staff contact details (mdw) of messages (contact note / item custom field)
+- Maintenance
+- Loan history
+- Improve item text fields
+- Make non-reservable category configurable
+- Convert staff contacts to get admin access
+
+
 ## Development
 
 ### Usage after first setup
