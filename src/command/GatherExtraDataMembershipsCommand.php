@@ -8,16 +8,25 @@ use Lode\AccessSyncLendEngine\service\ConvertCsvService;
 use Lode\AccessSyncLendEngine\specification\MemberSpecification;
 use Symfony\Component\Console\Attribute\AsCommand;
 use Symfony\Component\Console\Command\Command;
+use Symfony\Component\Console\Input\InputArgument;
 use Symfony\Component\Console\Input\InputInterface;
 use Symfony\Component\Console\Output\OutputInterface;
 
 #[AsCommand(name: 'gather-extra-data-memberships')]
 class GatherExtraDataMembershipsCommand extends Command
 {
+	protected function configure(): void
+	{
+		$this->addArgument('membershipId', InputArgument::REQUIRED, 'id of the main membership');
+		$this->addArgument('membershipPrice', InputArgument::REQUIRED, 'price of the main membership');
+	}
+	
 	protected function execute(InputInterface $input, OutputInterface $output): int
 	{
 		$service = new ConvertCsvService();
 		$dataDirectory = dirname(dirname(__DIR__)).'/data';
+		$membershipId = $input->getArgument('membershipId');
+		$membershipPrice = $input->getArgument('membershipPrice');
 		
 		$service->requireInputCsvs(
 			$dataDirectory,
@@ -49,14 +58,14 @@ class GatherExtraDataMembershipsCommand extends Command
 			
 			$membershipQueries[] = "
 				INSERT INTO `membership` SET
-				`subscription_id` = 1,
+				`subscription_id` = ".$membershipId.",
 				`contact_id` = (
 					SELECT `id`
 					FROM `contact`
 					WHERE `membership_number` = '".$membershipNumber."'
 				),
 				`created_by` = 1,
-				`price` = '32,50',
+				`price` = '".$membershipPrice."',
 				`created_at` = NOW(),
 				`starts_at` = '".$startsAt->format('Y-m-d H:i:s')."',
 				`expires_at` = ".($expiresAt === null ? 'NULL' : "'".$expiresAt->format('Y-m-d H:i:s')."'")."

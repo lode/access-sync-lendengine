@@ -33,7 +33,7 @@ Run each command with `./script/console ./script/command <commandName> <optional
 | Contacts | `convert-contacts` | Contact basics: name, email, phone, address, etc. |
 | Items | `convert-website-csvs` + `csvTimestamp` | Item basics: name, code, category, brand, price, etc. |
 | Parts | `gather-extra-data-item-parts` | Count, description |
-| Memberships | `gather-extra-data-memberships` | Contact <> Subscription, period |
+| Memberships | `gather-extra-data-memberships` + `membershipId` + `membershipPrice` | Contact <> Subscription, period |
 | Contacts extras | `gather-extra-data-contacts` | Membership number and contact created |
 | Items extras | `gather-extra-data-items` | Item created |
 
