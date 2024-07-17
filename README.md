@@ -20,7 +20,20 @@ Sync data from [SpeelotheekSoftware's Access](https://speelotheeksoftware.nl/) t
 ### 1. Export data from SpeelotheekSoftware's Access
 
 - [Export website CSVs](/docs/Export%20website%20CSVs.md)
+	- Artikelen_<timestamp>
+	- ArtikelTypes_<timestamp>
+	- Merken_<timestamp>
 - [Export Access tables](/docs/Export%20Access%20tables.md)
+	- Artikel
+	- Lid
+	- LidStatus
+	- LidType
+	- Melding
+	- MeldingSoort
+	- Onderdeel
+	- Plaats
+	- Straat
+	- Verantwoordelijke
 - Place all exported files in `data/`.
 
 ### 2. Run scripts
