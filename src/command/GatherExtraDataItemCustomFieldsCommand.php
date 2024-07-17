@@ -6,8 +6,10 @@ namespace Lode\AccessSyncLendEngine\command;
 
 use Lode\AccessSyncLendEngine\service\ConvertCsvService;
 use Lode\AccessSyncLendEngine\specification\ArticleSpecification;
+use Lode\AccessSyncLendEngine\specification\EmployeeSpecification;
 use Lode\AccessSyncLendEngine\specification\MessageKindSpecification;
 use Lode\AccessSyncLendEngine\specification\MessageSpecification;
+use Lode\AccessSyncLendEngine\specification\ResponsibleSpecification;
 use Symfony\Component\Console\Attribute\AsCommand;
 use Symfony\Component\Console\Command\Command;
 use Symfony\Component\Console\Input\InputArgument;
@@ -34,6 +36,8 @@ class GatherExtraDataItemCustomFieldsCommand extends Command
 				'Melding.csv',
 				'MeldingSoort.csv',
 				'Artikel.csv',
+				'Medewerker.csv',
+				'Verantwoordelijke.csv',
 			],
 			$output,
 		);
@@ -55,6 +59,12 @@ class GatherExtraDataItemCustomFieldsCommand extends Command
 		$articleCsvLines = $service->getExportCsv($dataDirectory.'/Artikel.csv', (new ArticleSpecification())->getExpectedHeaders());
 		$output->writeln('Imported ' . count($articleCsvLines). ' artikelen');
 		
+		$employeeCsvLines = $service->getExportCsv($dataDirectory.'/Medewerker.csv', (new EmployeeSpecification())->getExpectedHeaders());
+		$output->writeln('Imported ' . count($messageCsvLines). ' medewerkers');
+		
+		$responsibleCsvLines = $service->getExportCsv($dataDirectory.'/Verantwoordelijke.csv', (new ResponsibleSpecification())->getExpectedHeaders());
+		$output->writeln('Imported ' . count($messageCsvLines). ' verantwoordelijken');
+		
 		$output->writeln('<info>Exporting contact notes ...</info>');
 		
 		$messageKindMapping = [];
@@ -73,6 +83,22 @@ class GatherExtraDataItemCustomFieldsCommand extends Command
 			$articleSkuMapping[$articleId] = $articleSku;
 		}
 		
+		$employeeMapping = [];
+		foreach ($employeeCsvLines as $employeeCsvLine) {
+			$employeeId    = $employeeCsvLine['mdw_id'];
+			$responsibleId = $employeeCsvLine['mdw_vrw_id'];
+			
+			$employeeMapping[$employeeId] = $responsibleId;
+		}
+		
+		$responsibleMapping = [];
+		foreach ($responsibleCsvLines as $responsibleCsvLine) {
+			$responsibleId   = $responsibleCsvLine['vrw_id'];
+			$responsibleName = $responsibleCsvLine['vrw_voornaam'].' '.$responsibleCsvLine['vrw_achternaam'];
+			
+			$responsibleMapping[$responsibleId] = $responsibleName;
+		}
+		
 		$itemCustomFieldData = [];
 		foreach ($messageCsvLines as $messageCsvLine) {
 			// filter on kinds meant for items
@@ -87,8 +113,10 @@ class GatherExtraDataItemCustomFieldsCommand extends Command
 				throw new \Exception('missing item id');
 			}
 			
-			$text      = trim($messageCsvLine[$messageMapping['text']]);
-			$createdBy = $messageCsvLine[$messageMapping['created_by']]; // @todo convert from mld_mdw_id_toevoeg to contact_first|last_name
+			$text          = trim($messageCsvLine[$messageMapping['text']]);
+			$employeeId    = $messageCsvLine[$messageMapping['created_by']];
+			$responsibleId = $employeeMapping[$employeeId];
+			$createdByName = $responsibleMapping[$responsibleId];
 			
 			$createdAt = $messageCsvLine[$messageMapping['created_at'][0]];
 			if ($createdAt === '') {
@@ -96,7 +124,7 @@ class GatherExtraDataItemCustomFieldsCommand extends Command
 			}
 			$createdAt = \DateTime::createFromFormat('Y-n-j H:i:s', $createdAt);
 			
-			$text = $createdAt->format('Y-m-d H:i:s').' '.$createdBy.': '.$text;
+			$text = $createdAt->format('Y-m-d H:i:s').' '.$createdByName.': '.$text;
 			
 			$articleId  = $messageCsvLine[$messageMapping['inventory_item_id']];
 			$articleSku = $articleSkuMapping[$articleId];

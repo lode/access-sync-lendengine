@@ -5,9 +5,11 @@ declare(strict_types=1);
 namespace Lode\AccessSyncLendEngine\command;
 
 use Lode\AccessSyncLendEngine\service\ConvertCsvService;
+use Lode\AccessSyncLendEngine\specification\EmployeeSpecification;
 use Lode\AccessSyncLendEngine\specification\MemberSpecification;
 use Lode\AccessSyncLendEngine\specification\MessageKindSpecification;
 use Lode\AccessSyncLendEngine\specification\MessageSpecification;
+use Lode\AccessSyncLendEngine\specification\ResponsibleSpecification;
 use Symfony\Component\Console\Attribute\AsCommand;
 use Symfony\Component\Console\Command\Command;
 use Symfony\Component\Console\Input\InputInterface;
@@ -28,6 +30,8 @@ class GatherExtraDataContactNotesCommand extends Command
 				'Melding.csv',
 				'MeldingSoort.csv',
 				'Lid.csv',
+				'Medewerker.csv',
+				'Verantwoordelijke.csv',
 			],
 			$output,
 		);
@@ -49,6 +53,12 @@ class GatherExtraDataContactNotesCommand extends Command
 		$memberCsvLines = $service->getExportCsv($dataDirectory.'/Lid.csv', (new MemberSpecification())->getExpectedHeaders());
 		$output->writeln('Imported ' . count($memberCsvLines). ' leden');
 		
+		$employeeCsvLines = $service->getExportCsv($dataDirectory.'/Medewerker.csv', (new EmployeeSpecification())->getExpectedHeaders());
+		$output->writeln('Imported ' . count($messageCsvLines). ' medewerkers');
+		
+		$responsibleCsvLines = $service->getExportCsv($dataDirectory.'/Verantwoordelijke.csv', (new ResponsibleSpecification())->getExpectedHeaders());
+		$output->writeln('Imported ' . count($messageCsvLines). ' verantwoordelijken');
+		
 		$output->writeln('<info>Exporting contact notes ...</info>');
 		
 		$messageKindMapping = [];
@@ -67,6 +77,22 @@ class GatherExtraDataContactNotesCommand extends Command
 			$membershipNumberMapping[$memberId] = $memberNumber;
 		}
 		
+		$employeeMapping = [];
+		foreach ($employeeCsvLines as $employeeCsvLine) {
+			$employeeId    = $employeeCsvLine['mdw_id'];
+			$responsibleId = $employeeCsvLine['mdw_vrw_id'];
+			
+			$employeeMapping[$employeeId] = $responsibleId;
+		}
+		
+		$responsibleMapping = [];
+		foreach ($responsibleCsvLines as $responsibleCsvLine) {
+			$responsibleId    = $responsibleCsvLine['vrw_id'];
+			$responsibleEmail = $responsibleCsvLine['vrw_email'];
+			
+			$responsibleMapping[$responsibleId] = $responsibleEmail;
+		}
+		
 		$contactNoteQueries = [];
 		foreach ($messageCsvLines as $messageCsvLine) {
 			// filter on kinds meant for contacts
@@ -81,8 +107,10 @@ class GatherExtraDataContactNotesCommand extends Command
 				throw new \Exception('missing contact id');
 			}
 			
-			$text      = trim($messageCsvLine[$messageMapping['text']]);
-			$createdBy = $messageCsvLine[$messageMapping['created_by']]; // @todo convert from mld_mdw_id_toevoeg to contact_id
+			$text           = trim($messageCsvLine[$messageMapping['text']]);
+			$employeeId     = $messageCsvLine[$messageMapping['created_by']];
+			$responsibleId  = $employeeMapping[$employeeId];
+			$createdByEmail = $responsibleMapping[$responsibleId];
 			
 			$createdAt = $messageCsvLine[$messageMapping['created_at'][0]];
 			if ($createdAt === '') {
@@ -95,7 +123,15 @@ class GatherExtraDataContactNotesCommand extends Command
 			
 			$contactNoteQueries[] = "
 				INSERT INTO `note` SET
-				`created_by` = ".$createdBy."
+				`created_by` = (
+					SELECT IFNULL(
+						(
+							SELECT `id`
+							FROM `contact`
+							WHERE `email` = '".$createdByEmail."'
+						), 1
+					)
+				),
 				`contact_id` = (
 					SELECT IFNULL(
 						(

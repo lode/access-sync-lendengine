@@ -75,7 +75,6 @@ Contact Lend Engine support and ask to import the SQLs for you.
 ## To Do
 
 - Part mutations (waiting for LE implementation)
-- Fix staff contact details (mdw) of messages (contact note / item custom field)
 - Maintenance
 - Loan history
 - Improve item text fields
