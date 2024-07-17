@@ -7,13 +7,16 @@
 - klik bovenin de ribbon op 'Externe gegevens'
 - kies voor 'Tekstbestand'
 - blader naar een map die je kan onthouden, en gebruik `.csv` als extensie
+- kies 'Opslaan'
 - _niet_ aanvinken van 'met opmaak en indeling'
+- kies 'OK'
 - in 'Wizard Tekst exporteren'
-	- gebruik specificatie
+	- gebruik specificatie (als je eerder dezelfde tabel hebt geëxporteerd en de configuratie/exportstappen hebt opgeslagen)
 		- klik links onderin op 'Geavanceerd...'
 		- klik rechts op 'Specificaties...'
 		- selecteer 'CSV Exportspecificatie', en klik 'Openen'
-	- handmatig opnieuw
+	- anders: handmatig opnieuw
+		- klik links onderin op 'Geavanceerd...'
 		- niet standaard goed
 			- 'Scheidingsteken veld': `,`
 			- 'Decimaalsymbool': `.` (geen komma om conflicten te voorkomen net 'Scheidingsteken veld')
