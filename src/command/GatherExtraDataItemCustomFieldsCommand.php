@@ -6,6 +6,7 @@ namespace Lode\AccessSyncLendEngine\command;
 
 use Lode\AccessSyncLendEngine\service\ConvertCsvService;
 use Lode\AccessSyncLendEngine\specification\ArticleSpecification;
+use Lode\AccessSyncLendEngine\specification\MessageKindSpecification;
 use Lode\AccessSyncLendEngine\specification\MessageSpecification;
 use Symfony\Component\Console\Attribute\AsCommand;
 use Symfony\Component\Console\Command\Command;
@@ -31,12 +32,14 @@ class GatherExtraDataItemCustomFieldsCommand extends Command
 			$dataDirectory,
 			[
 				'Melding.csv',
+				'MeldingSoort.csv',
 				'Artikel.csv',
 			],
 			$output,
 		);
 		
 		$messageMapping = [
+			'kind'              => 'Mld_Mls_id',
 			'text'              => 'Mld_Oms',
 			'inventory_item_id' => 'Mld_Art_id',
 			'created_by'        => 'mld_mdw_id_toevoeg',
@@ -46,10 +49,21 @@ class GatherExtraDataItemCustomFieldsCommand extends Command
 		$messageCsvLines = $service->getExportCsv($dataDirectory.'/Melding.csv', (new MessageSpecification())->getExpectedHeaders());
 		$output->writeln('Imported ' . count($messageCsvLines). ' meldingen');
 		
+		$messageKindCsvLines = $service->getExportCsv($dataDirectory.'/MeldingSoort.csv', (new MessageKindSpecification())->getExpectedHeaders());
+		$output->writeln('Imported ' . count($messageCsvLines). ' melding soorten');
+		
 		$articleCsvLines = $service->getExportCsv($dataDirectory.'/Artikel.csv', (new ArticleSpecification())->getExpectedHeaders());
 		$output->writeln('Imported ' . count($articleCsvLines). ' artikelen');
 		
 		$output->writeln('<info>Exporting contact notes ...</info>');
+		
+		$messageKindMapping = [];
+		foreach ($messageKindCsvLines as $messageKindCsvLine) {
+			$messageKindId = $messageKindCsvLine['Mls_id'];
+			$messageKind   = $messageKindCsvLine['Mls_Naam'];
+			
+			$messageKindMapping[$messageKindId] = $messageKind;
+		}
 		
 		$articleSkuMapping = [];
 		foreach ($articleCsvLines as $articleCsvLine) {
@@ -61,12 +75,17 @@ class GatherExtraDataItemCustomFieldsCommand extends Command
 		
 		$itemCustomFieldData = [];
 		foreach ($messageCsvLines as $messageCsvLine) {
-			// skip messages for contacts
-			if ($messageCsvLine[$messageMapping['inventory_item_id']] === '') {
+			// filter on kinds meant for items
+			$messageKindId = $messageCsvLine[$messageMapping['kind']];
+			$messageKind   = $messageKindMapping[$messageKindId];
+			if ($messageKind !== 'Artikel') {
 				continue;
 			}
 			
-			// @todo filter on Mld_Mls_id
+			// check for item references
+			if ($messageCsvLine[$messageMapping['inventory_item_id']] === '') {
+				throw new \Exception('missing item id');
+			}
 			
 			$text      = trim($messageCsvLine[$messageMapping['text']]);
 			$createdBy = $messageCsvLine[$messageMapping['created_by']]; // @todo convert from mld_mdw_id_toevoeg to contact_first|last_name

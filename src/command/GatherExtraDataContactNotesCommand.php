@@ -6,6 +6,7 @@ namespace Lode\AccessSyncLendEngine\command;
 
 use Lode\AccessSyncLendEngine\service\ConvertCsvService;
 use Lode\AccessSyncLendEngine\specification\MemberSpecification;
+use Lode\AccessSyncLendEngine\specification\MessageKindSpecification;
 use Lode\AccessSyncLendEngine\specification\MessageSpecification;
 use Symfony\Component\Console\Attribute\AsCommand;
 use Symfony\Component\Console\Command\Command;
@@ -25,12 +26,14 @@ class GatherExtraDataContactNotesCommand extends Command
 			$dataDirectory,
 			[
 				'Melding.csv',
+				'MeldingSoort.csv',
 				'Lid.csv',
 			],
 			$output,
 		);
 		
 		$messageMapping = [
+			'kind'       => 'Mld_Mls_id',
 			'text'       => 'Mld_Oms',
 			'contact_id' => 'Mld_Lid_id',
 			'created_by' => 'mld_mdw_id_toevoeg',
@@ -40,10 +43,21 @@ class GatherExtraDataContactNotesCommand extends Command
 		$messageCsvLines = $service->getExportCsv($dataDirectory.'/Melding.csv', (new MessageSpecification())->getExpectedHeaders());
 		$output->writeln('Imported ' . count($messageCsvLines). ' meldingen');
 		
+		$messageKindCsvLines = $service->getExportCsv($dataDirectory.'/MeldingSoort.csv', (new MessageKindSpecification())->getExpectedHeaders());
+		$output->writeln('Imported ' . count($messageCsvLines). ' melding soorten');
+		
 		$memberCsvLines = $service->getExportCsv($dataDirectory.'/Lid.csv', (new MemberSpecification())->getExpectedHeaders());
 		$output->writeln('Imported ' . count($memberCsvLines). ' leden');
 		
 		$output->writeln('<info>Exporting contact notes ...</info>');
+		
+		$messageKindMapping = [];
+		foreach ($messageKindCsvLines as $messageKindCsvLine) {
+			$messageKindId = $messageKindCsvLine['Mls_id'];
+			$messageKind   = $messageKindCsvLine['Mls_Naam'];
+			
+			$messageKindMapping[$messageKindId] = $messageKind;
+		}
 		
 		$membershipNumberMapping = [];
 		foreach ($memberCsvLines as $memberCsvLine) {
@@ -55,12 +69,17 @@ class GatherExtraDataContactNotesCommand extends Command
 		
 		$contactNoteQueries = [];
 		foreach ($messageCsvLines as $messageCsvLine) {
-			// skip messages for items
-			if ($messageCsvLine[$messageMapping['contact_id']] === '') {
+			// filter on kinds meant for contacts
+			$messageKindId = $messageCsvLine[$messageMapping['kind']];
+			$messageKind   = $messageKindMapping[$messageKindId];
+			if ($messageKind !== 'Lid') {
 				continue;
 			}
 			
-			// @todo filter on Mld_Mls_id
+			// skip for contact references
+			if ($messageCsvLine[$messageMapping['contact_id']] === '') {
+				throw new \Exception('missing contact id');
+			}
 			
 			$text      = trim($messageCsvLine[$messageMapping['text']]);
 			$createdBy = $messageCsvLine[$messageMapping['created_by']]; // @todo convert from mld_mdw_id_toevoeg to contact_id
