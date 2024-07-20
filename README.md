@@ -62,6 +62,7 @@ The CSVs from the above scripts (`LendEngine*.csv` for items & contacts) can be 
 
 - Import items via Admin > Items > Bulk update (/admin/import/items/)
 	- Copy the contents of the output of the `convert-website-csvs` command
+	- Copy quotes along (copy raw content, not the selection when opening in a spreadsheet program) to support newlines
 	- Enable "Create new items where code is not found"
 - Import contacts via Admin > Settings > Import contacts (/admin/import/contacts/)
 	- Copy the contents of the output of the `convert-contacts` command
