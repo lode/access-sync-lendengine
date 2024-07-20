@@ -20,9 +20,9 @@ Sync data from [SpeelotheekSoftware's Access](https://speelotheeksoftware.nl/) t
 ### 1. Export data from SpeelotheekSoftware's Access
 
 - [Export website CSVs](/docs/Export%20website%20CSVs.md)
-	- Artikelen_<timestamp>
-	- ArtikelTypes_<timestamp>
-	- Merken_<timestamp>
+	- Artikelen_\<timestamp>
+	- ArtikelTypes_\<timestamp>
+	- Merken_\<timestamp>
 - [Export Access tables](/docs/Export%20Access%20tables.md)
 	- Artikel
 	- Lid
@@ -39,6 +39,8 @@ Sync data from [SpeelotheekSoftware's Access](https://speelotheeksoftware.nl/) t
 ### 2. Run scripts
 
 Run each command with `./script/console ./script/command <commandName> <optionalExtraArguments>`.
+
+You can run `./script/console ./script/command <commandName> --help` to get more information about any extra arguments.
 
 | Data | Command | Contents |
 | --- | --- | --- |
@@ -74,11 +76,11 @@ Contact Lend Engine support and ask to import the SQLs for you.
 
 ## To Do
 
+- Make non-reservable category configurable
+- Improve item text fields
 - Part mutations (waiting for LE implementation)
 - Maintenance
 - Loan history
-- Improve item text fields
-- Make non-reservable category configurable
 - Convert staff contacts to get admin access
 
 
