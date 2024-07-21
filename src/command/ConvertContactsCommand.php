@@ -55,6 +55,7 @@ class ConvertContactsCommand extends Command
 		];
 		$memberMapping = [
 			'lid_lis_id' => 'is_active',
+			'lid_key'    => 'membership_number',
 		];
 		
 		$responsibleCsvLines = $service->getExportCsv($dataDirectory.'/Verantwoordelijke.csv', (new ResponsibleSpecification())->getExpectedHeaders());
@@ -133,14 +134,15 @@ class ConvertContactsCommand extends Command
 			}
 			
 			$contactConverted = [
-				'First name'     => null,
-				'Last name'      => null,
-				'Email'          => null,
-				'Telephone'      => null,
-				'Address line 1' => null,
-				'City'           => null,
-				'State'          => '-',
-				'Postcode'       => null,
+				'First name'        => null,
+				'Last name'         => null,
+				'Email'             => null,
+				'Telephone'         => null,
+				'Address line 1'    => null,
+				'City'              => null,
+				'State'             => '-',
+				'Postcode'          => null,
+				'Membership number' => null,
 			];
 			
 			/**
@@ -157,6 +159,8 @@ class ConvertContactsCommand extends Command
 					$contactConverted[$contactKey] = $responsibleCsvLine[$responsibleKey];
 				}
 			}
+			
+			$contactConverted['Membership number'] = $memberCsvLine['lid_key'];
 			
 			/**
 			 * converting

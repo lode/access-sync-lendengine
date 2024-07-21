@@ -45,13 +45,13 @@ You can run `./script/console ./script/command <commandName> --help` to get more
 | Data | Command | Contents |
 | --- | --- | --- |
 | Get insight | `insight` | Contacts without email address and contacts which share an email address |
-| Contacts | `convert-contacts` | Contact basics: name, email, phone, address, etc. |
+| Contacts | `convert-contacts` | Contact basics: name, email, phone, address, membership number, etc. |
 | Items | `convert-website-csvs` + `csvTimestamp` | Item basics: name, code, category, brand, price, etc. |
 | Parts | `gather-extra-data-item-parts` | Count, description |
 | Memberships | `gather-extra-data-memberships` + `membershipId` + `membershipPrice` | Contact <> Subscription, period |
-| Contacts extras | `gather-extra-data-contacts` | Membership number and contact created |
 | Contact notes | `gather-extra-data-contact-notes` | Messages ("meldingen") |
 | Item custom fields | `gather-extra-data-item-custom-fields` + `customFieldId` | Messages ("meldingen") |
+| Contacts extras | `gather-extra-data-contacts` | Contact created |
 | Items extras | `gather-extra-data-items` | Item created |
 
 Output files `LendEngine*.csv` & `LendEngine*.sql` will be added in `data/`.
@@ -66,7 +66,6 @@ The CSVs from the above scripts (`LendEngine*.csv` for items & contacts) can be 
 	- Enable "Create new items where code is not found"
 - Import contacts via Admin > Settings > Import contacts (/admin/import/contacts/)
 	- Copy the contents of the output of the `convert-contacts` command
-	- Don't copy the header row along
 
 ### 4. Import SQLs via Lend Engine support
 

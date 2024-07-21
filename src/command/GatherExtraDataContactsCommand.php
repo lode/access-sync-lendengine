@@ -50,10 +50,6 @@ class GatherExtraDataContactsCommand extends Command
 			'email'      => 'vrw_email',
 		];
 		
-		$memberMapping = [
-			'membership_number' => 'lid_key',
-		];
-		
 		$responsibleMemberMapping = [];
 		$nonActiveResponsibleIds = [];
 		foreach ($memberCsvLines as $memberCsvLine) {
@@ -86,15 +82,11 @@ class GatherExtraDataContactsCommand extends Command
 				continue;
 			}
 			
-			$memberCsvLine = $responsibleMemberMapping[$responsibleId];
-			
-			$membershipNumber = $memberCsvLine[$memberMapping['membership_number']];
-			$email            = $responsibleCsvLine[$responsibleMapping['email']];
-			$createdAt        = \DateTime::createFromFormat('Y-n-j H:i:s', $responsibleCsvLine[$responsibleMapping['created_at']]);
+			$email     = $responsibleCsvLine[$responsibleMapping['email']];
+			$createdAt = \DateTime::createFromFormat('Y-n-j H:i:s', $responsibleCsvLine[$responsibleMapping['created_at']]);
 			
 			$contactQueries[] = "
 				UPDATE `contact` SET
-				`membership_number` = '".$membershipNumber."',
 				`created_at` = '".$createdAt->format('Y-m-d H:i:s')."'
 				WHERE `email` = '".$email."'
 			;";
