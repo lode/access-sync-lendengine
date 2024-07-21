@@ -67,7 +67,6 @@ The CSVs from the above scripts (`LendEngine*.csv` for items & contacts) can be 
 - Import contacts via Admin > Settings > Import contacts (/admin/import/contacts/)
 	- Copy the contents of the output of the `convert-contacts` command
 	- Don't copy the header row along
-	- Import 10 contacts at once because of performance issues
 
 ### 4. Import SQLs via Lend Engine support
 
