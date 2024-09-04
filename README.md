@@ -25,11 +25,14 @@ Sync data from [SpeelotheekSoftware's Access](https://speelotheeksoftware.nl/) t
 	- Merken_\<timestamp>
 - [Export Access tables](/docs/Export%20Access%20tables.md)
 	- Artikel
+	- ArtikelType
+	- ArtikelUitleenDuur
 	- Lid
 	- LidStatus
 	- LidType
 	- Melding
 	- MeldingSoort
+	- Merk
 	- Onderdeel
 	- Plaats
 	- Straat
@@ -46,7 +49,8 @@ You can run `./script/console ./script/command <commandName> --help` to get more
 | --- | --- | --- |
 | Get insight | `insight` | Contacts without email address and contacts which share an email address |
 | Contacts | `convert-contacts` | Contact basics: name, email, phone, address, membership number, etc. |
-| Items | `convert-website-csvs` + `csvTimestamp` | Item basics: name, code, category, brand, price, etc. |
+| Items | `convert-items` | Item basics: name, code, category, brand, price, etc. |
+| Items alternative | `convert-website-csvs` + `csvTimestamp` | Item basics, alternative method with webcatalogus CSVs |
 | Parts | `gather-extra-data-item-parts` | Count, description |
 | Memberships | `gather-extra-data-memberships` + `membershipId` + `membershipPrice` | Contact <> Subscription, period |
 | Contact notes | `gather-extra-data-contact-notes` | Messages ("meldingen") |
@@ -61,7 +65,7 @@ Output files `LendEngine*.csv` & `LendEngine*.sql` will be added in `data/`.
 The CSVs from the above scripts (`LendEngine*.csv` for items & contacts) can be imported via Lend Engine's CSV import admin.
 
 - Import items via Admin > Items > Bulk update (/admin/import/items/)
-	- Copy the contents of the output of the `convert-website-csvs` command
+	- Copy the contents of the output of the `convert-items` **OR** `convert-website-csvs` command
 	- Copy quotes along (copy raw content, not the selection when opening in a spreadsheet program) to support newlines
 	- Enable "Create new items where code is not found"
 - Import contacts via Admin > Settings > Import contacts (/admin/import/contacts/)

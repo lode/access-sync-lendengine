@@ -200,7 +200,7 @@ class ConvertContactsCommand extends Command
 		}
 		
 		/**
-		 * create lend engine item csv
+		 * create lend engine contact csv
 		 */
 		$convertedCsv = $service->createImportCsv($contactsConverted);
 		$convertedFileName = 'LendEngineContacts_'.time().'.csv';
