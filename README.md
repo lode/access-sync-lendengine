@@ -79,11 +79,9 @@ Contact Lend Engine support and ask to import the SQLs for you.
 
 ## To Do
 
-- Make non-reservable category configurable
-- Improve item text fields
 - Part mutations (waiting for LE implementation)
 - Maintenance
-- Loan history
+- Loan status / current location / loan history
 - Convert staff contacts to get admin access
 
 
