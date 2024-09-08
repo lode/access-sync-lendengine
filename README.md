@@ -56,7 +56,7 @@ You can run `./script/console ./script/command <commandName> --help` to get more
 | Contact notes | `gather-extra-data-contact-notes` | Messages ("meldingen") |
 | Item custom fields | `gather-extra-data-item-custom-fields` + `customFieldId` | Messages ("meldingen") |
 | Contacts extras | `gather-extra-data-contacts` | Contact created |
-| Items extras | `gather-extra-data-items` | Item created |
+| Items extras | `gather-extra-data-items` | Item created, show on catalogus |
 
 Output files `LendEngine*.csv` & `LendEngine*.sql` will be added in `data/`.
 

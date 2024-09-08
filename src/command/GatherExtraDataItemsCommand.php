@@ -28,8 +28,9 @@ class GatherExtraDataItemsCommand extends Command
 		);
 		
 		$articleMapping = [
-			'created_at' => 'art_aankoopdatum',
-			'sku'        => 'art_key',
+			'show_on_website' => 'art_webcatalogus',
+			'created_at'      => 'art_aankoopdatum',
+			'sku'             => 'art_key',
 		];
 		
 		$articleCsvLines = $service->getExportCsv($dataDirectory.'/Artikel.csv', (new ArticleSpecification())->getExpectedHeaders());
@@ -39,12 +40,14 @@ class GatherExtraDataItemsCommand extends Command
 		
 		$itemQueries = [];
 		foreach ($articleCsvLines as $articleCsvLine) {
-			$createdAt = \DateTime::createFromFormat('Y-n-j H:i:s', $articleCsvLine[$articleMapping['created_at']]);
-			$updatedAt = $createdAt;
-			$sku       = $articleCsvLine[$articleMapping['sku']];
+			$showOnWebsite = (bool) $articleCsvLine[$articleMapping['show_on_website']];
+			$createdAt     = \DateTime::createFromFormat('Y-n-j H:i:s', $articleCsvLine[$articleMapping['created_at']]);
+			$updatedAt     = $createdAt;
+			$sku           = $articleCsvLine[$articleMapping['sku']];
 			
 			$itemQueries[] = "
 				UPDATE `inventory_item` SET
+				`show_on_website` = '".($showOnWebsite === false ? 0 : 1)."',
 				`created_at` = '".$createdAt->format('Y-m-d H:i:s')."',
 				`updated_at` = '".$updatedAt->format('Y-m-d H:i:s')."'
 				WHERE `sku` = '".$sku."'
