@@ -15,8 +15,6 @@ use Symfony\Component\Console\Input\InputInterface;
 use Symfony\Component\Console\Output\OutputInterface;
 
 /**
- * @todo check why reservable doesn't import
- * @todo check whether override loan period 0 works
  * @todo optionally convert parts in components field
  */
 
@@ -124,10 +122,13 @@ class ConvertItemsCommand extends Command
 			$itemConverted['Price paid'] = str_replace('€ ', '', $itemConverted['Price paid']);
 			$itemConverted['Price paid'] = str_replace('.', ',', $itemConverted['Price paid']);
 			$itemConverted['Price paid'] = (float) $itemConverted['Price paid'];
+			if ($itemConverted['Price paid'] === 0.0) {
+				$itemConverted['Price paid'] = null;
+			}
 			
 			// override loan period, clear default loan period, collection relation for other
 			if ($itemConverted['Override loan period'] === '1') {
-				$itemConverted['Override loan period'] = 0;
+				$itemConverted['Override loan period'] = null;
 			}
 			else {
 				$itemConverted['Override loan period'] = (int) $articleLendPeriodMapping[$itemConverted['Override loan period']];
