@@ -95,7 +95,7 @@ class ConvertItemsCommand extends Command
 				'Type'                 => 'loan',
 				'Name'                 => null,
 				'Long description'     => null,
-				'Condition'            => 'B - fair',
+				'Condition'            => 'B - Fair',
 				'Category'             => null,
 				'Brand'                => null,
 				'Price paid'           => null,
