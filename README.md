@@ -52,6 +52,7 @@ You can run `./script/console ./script/command <commandName> --help` to get more
 | Items | `convert-items` | Item basics: name, code, category, brand, price, etc. |
 | Items alternative | `convert-website-csvs` + `csvTimestamp` | Item basics, alternative method with webcatalogus CSVs |
 | Parts | `gather-extra-data-item-parts` | Count, description |
+| Images | `gather-extra-data-item-images` + `imagesDirectoryName` | Item images (SQL and converted image files) |
 | Memberships | `gather-extra-data-memberships` + `membershipId` + `membershipPrice` | Contact <> Subscription, period |
 | Contact notes | `gather-extra-data-contact-notes` | Messages ("meldingen") |
 | Item custom fields | `gather-extra-data-item-custom-fields` + `customFieldId` | Messages ("meldingen") |

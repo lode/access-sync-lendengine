@@ -11,6 +11,7 @@ use Lode\AccessSyncLendEngine\command\ConvertWebsiteCsvsCommand;
 use Lode\AccessSyncLendEngine\command\GatherExtraDataContactNotesCommand;
 use Lode\AccessSyncLendEngine\command\GatherExtraDataContactsCommand;
 use Lode\AccessSyncLendEngine\command\GatherExtraDataItemCustomFieldsCommand;
+use Lode\AccessSyncLendEngine\command\GatherExtraDataItemImagesCommand;
 use Lode\AccessSyncLendEngine\command\GatherExtraDataItemPartsCommand;
 use Lode\AccessSyncLendEngine\command\GatherExtraDataItemsCommand;
 use Lode\AccessSyncLendEngine\command\GatherExtraDataMembershipsCommand;
@@ -32,6 +33,7 @@ $application->add(new GatherExtraDataItemsCommand());
 $application->add(new GatherExtraDataItemCustomFieldsCommand());
 $application->add(new GatherExtraDataItemPartsCommand());
 $application->add(new GatherExtraDataMembershipsCommand());
+$application->add(new GatherExtraDataItemImagesCommand());
 
 // other tooling
 $application->add(new InsightCommand());

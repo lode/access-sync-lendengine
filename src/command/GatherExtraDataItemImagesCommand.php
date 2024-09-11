@@ -6,6 +6,7 @@ namespace Lode\AccessSyncLendEngine\command;
 
 use Symfony\Component\Console\Attribute\AsCommand;
 use Symfony\Component\Console\Command\Command;
+use Symfony\Component\Console\Helper\ProgressBar;
 use Symfony\Component\Console\Input\InputArgument;
 use Symfony\Component\Console\Input\InputInterface;
 use Symfony\Component\Console\Output\OutputInterface;
@@ -35,21 +36,35 @@ class GatherExtraDataItemImagesCommand extends Command
 			throw new \Exception('images directory not a sub directory of data/');
 		}
 		
-		$imagePaths = glob($imagesDirectory.'/*.jpg');
+		$imagePaths = [
+			...glob($imagesDirectory.'/*.jpg'),
+			...glob($imagesDirectory.'/*.JPG'),
+			...glob($imagesDirectory.'/*.jpeg'),
+			...glob($imagesDirectory.'/*.JPEG'),
+		];
 		if ($imagePaths === []) {
 			throw new \Exception('images directory does not contain any images');
 		}
 		
 		$output->writeln('<info>Exporting item images ...</info>');
 		
+		mkdir($exportDirectory.'/thumbs/', recursive: true);
+		mkdir($exportDirectory.'/large/', recursive: true);
+		
+		$progressBar = new ProgressBar($output, count($imagePaths));
+		$progressBar->setFormat('debug');
+		$progressBar->start();
+		
 		$itemImagesQueries = [];
 		foreach ($imagePaths as $imagePath) {
-			$imageArticleSku  = basename($imagePath, '.jpg');
+			$progressBar->advance();
+			
+			$imageArticleSku  = basename($imagePath);
+			$imageArticleSku  = substr($imageArticleSku, 0, strpos($imageArticleSku, '.'));
 			$imageNewFileName = uniqid().'.jpg';
 			
-			// @todo white square image (100x100 or 1200x1200) with image in the center
-			copy($imagePath, $exportDirectory.'/large/'.$imageNewFileName);
-			copy($imagePath, $exportDirectory.'/thumbs/'.$imageNewFileName);
+			$this->convertImage($imagePath, $exportDirectory.'/thumbs/'.$imageNewFileName, 100);
+			$this->convertImage($imagePath, $exportDirectory.'/large/'.$imageNewFileName, 1200);
 			
 			$itemImagesQueries[] = "
 				INSERT INTO `images` SET
@@ -62,9 +77,12 @@ class GatherExtraDataItemImagesCommand extends Command
 						), 1
 					)
 				),
-				`image_name` = ".$imageNewFileName."
+				`image_name` = '".$imageNewFileName."'
 			;";
 		}
+		
+		$progressBar->finish();
+		$output->writeln('');
 		
 		$convertedFileName = 'LendEngineItemImages_ExtraData_'.time().'.sql';
 		file_put_contents($dataDirectory.'/'.$convertedFileName, implode(PHP_EOL, $itemImagesQueries));
@@ -74,5 +92,35 @@ class GatherExtraDataItemImagesCommand extends Command
 		$output->writeln('- new image files stored in ' . $exportDirectory . ', bundle in a zip file');
 		
 		return Command::SUCCESS;
+	}
+	
+	/**
+	 * convert to white square image with original image in the center
+	 */
+	private function convertImage(string $originalPath, string $newPath, int $newSize): void
+	{
+		if (mime_content_type($originalPath) !== 'image/jpeg') {
+			return;
+		}
+		
+		[$originalWidth, $originalHeight] = getimagesize($originalPath);
+		
+		// determine size and place of original
+		$scale     = $newSize / max($originalWidth, $originalHeight);
+		$newWidth  = (int) round($originalWidth * $scale);
+		$newHeight = (int) round($originalHeight * $scale);
+		$offsetX   = (int) round(($newSize - $newWidth) / 2);
+		$offsetY   = (int) round(($newSize - $newHeight) / 2);
+		
+		// create new image and fill with background colour
+		$gdImageNew      = imagecreatetruecolor($newSize, $newSize);
+		$whiteBackground = imagecolorallocate($gdImageNew, 255, 255, 255);
+		imagefill($gdImageNew, 0, 0, $whiteBackground);
+		
+		// place original image in the center of the new image
+		$gdImageOriginal = imagecreatefromjpeg($originalPath);
+		imagecopyresampled($gdImageNew, $gdImageOriginal, $offsetX, $offsetY, 0, 0, $newWidth, $newHeight, $originalWidth, $originalHeight);
+		copy($originalPath, $newPath);
+		imagejpeg($gdImageNew, $newPath, quality: 95);
 	}
 }
