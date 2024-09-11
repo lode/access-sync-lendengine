@@ -65,7 +65,7 @@ class GatherExtraDataItemCustomFieldsCommand extends Command
 		$responsibleCsvLines = $service->getExportCsv($dataDirectory.'/Verantwoordelijke.csv', (new ResponsibleSpecification())->getExpectedHeaders());
 		$output->writeln('Imported ' . count($messageCsvLines). ' verantwoordelijken');
 		
-		$output->writeln('<info>Exporting contact notes ...</info>');
+		$output->writeln('<info>Exporting item notes ...</info>');
 		
 		$messageKindMapping = [];
 		foreach ($messageKindCsvLines as $messageKindCsvLine) {
