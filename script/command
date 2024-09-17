@@ -10,11 +10,11 @@ use Lode\AccessSyncLendEngine\command\ConvertItemsCommand;
 use Lode\AccessSyncLendEngine\command\ConvertWebsiteCsvsCommand;
 use Lode\AccessSyncLendEngine\command\GatherExtraDataContactNotesCommand;
 use Lode\AccessSyncLendEngine\command\GatherExtraDataContactsCommand;
-use Lode\AccessSyncLendEngine\command\GatherExtraDataItemCustomFieldsCommand;
 use Lode\AccessSyncLendEngine\command\GatherExtraDataItemImagesCommand;
 use Lode\AccessSyncLendEngine\command\GatherExtraDataItemPartsCommand;
 use Lode\AccessSyncLendEngine\command\GatherExtraDataItemsCommand;
 use Lode\AccessSyncLendEngine\command\GatherExtraDataMembershipsCommand;
+use Lode\AccessSyncLendEngine\command\GatherExtraDataNotesCommand;
 use Lode\AccessSyncLendEngine\command\InsightCommand;
 use Lode\AccessSyncLendEngine\command\ObfuscateContactsCommand;
 use Symfony\Component\Console\Application;
@@ -30,10 +30,10 @@ $application->add(new ConvertWebsiteCsvsCommand());
 $application->add(new GatherExtraDataContactsCommand());
 $application->add(new GatherExtraDataContactNotesCommand());
 $application->add(new GatherExtraDataItemsCommand());
-$application->add(new GatherExtraDataItemCustomFieldsCommand());
+$application->add(new GatherExtraDataItemImagesCommand());
 $application->add(new GatherExtraDataItemPartsCommand());
 $application->add(new GatherExtraDataMembershipsCommand());
-$application->add(new GatherExtraDataItemImagesCommand());
+$application->add(new GatherExtraDataNotesCommand());
 
 // other tooling
 $application->add(new InsightCommand());

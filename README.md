@@ -43,7 +43,6 @@ Sync data from [SpeelotheekSoftware's Access](https://speelotheeksoftware.nl/) t
 ### 2. Configure Lend Engine
 
 - Create a membership type (Admin » Settings » Membership types » Add a membership type) to migrating existing memberships. Lookup its id in the edit url.
-- Create a custom item field (Admin » Settings » Item fields » Add a custom field) to migrate messages ("meldingen"). Create a "Type" of "Multiple lines of text". Lookup its id in the edit url.
 
 ### 3. Run scripts
 
@@ -62,10 +61,11 @@ Each script migrates a part of the data, you can choose which to run and do a ma
 | Parts | `gather-extra-data-item-parts` | Count, description. |
 | Images | `gather-extra-data-item-images photos` | Item images (SQL and converted image files). |
 | Memberships | `gather-extra-data-memberships [membershipId] [membershipPrice]` | Contact <> Subscription, period.<br>Use the id and price from the membership type created in step 2.<br>If you have multiple different memberships run this script multiple times with each subset of the export and different membership types. |
-| Contact notes | `gather-extra-data-contact-notes` | Messages ("meldingen") and specifics ("bijzonderheden") for contacts. |
-| Item custom fields | `gather-extra-data-item-custom-fields [customFieldId]` | Messages ("meldingen") for items.<br>Use the id from the custom item field created in step 2. |
-| Contacts extras | `gather-extra-data-contacts` | Contact created. |
+| Notes | `gather-extra-data-notes` | Messages ("meldingen") for contacts and items. |
+| Contact notes | `gather-extra-data-contact-notes` | Specifics ("bijzonderheden") for contacts. |
 | Items extras | `gather-extra-data-items` | Item created, show on catalogus. |
+| Contacts extras | `gather-extra-data-contacts` | Contact created. |
+| Contacts obfuscation | `obfuscate-contacts [timestamp]` | Obfuscate contact migration so it can be used to test with. |
 
 Output files `LendEngine*.csv` & `LendEngine*.sql` will be added in `data/`.
 
