@@ -51,7 +51,6 @@ class ConvertContactsCommand extends Command
 			'vrw_telefoonnr'     => 'Telephone',
 			'vrw_mobieltelnr'    => 'Telephone',
 			'vrw_email'          => 'Email',
-			'vrw_bijzonderheden' => 'custom_notes',
 		];
 		$memberMapping = [
 			'lid_lis_id' => 'is_active',

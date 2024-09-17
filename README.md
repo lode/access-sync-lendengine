@@ -62,7 +62,7 @@ Each script migrates a part of the data, you can choose which to run and do a ma
 | Parts | `gather-extra-data-item-parts` | Count, description. |
 | Images | `gather-extra-data-item-images photos` | Item images (SQL and converted image files). |
 | Memberships | `gather-extra-data-memberships [membershipId] [membershipPrice]` | Contact <> Subscription, period.<br>Use the id and price from the membership type created in step 2.<br>If you have multiple different memberships run this script multiple times with each subset of the export and different membership types. |
-| Contact notes | `gather-extra-data-contact-notes` | Messages ("meldingen") for contacts. |
+| Contact notes | `gather-extra-data-contact-notes` | Messages ("meldingen") and specifics ("bijzonderheden") for contacts. |
 | Item custom fields | `gather-extra-data-item-custom-fields [customFieldId]` | Messages ("meldingen") for items.<br>Use the id from the custom item field created in step 2. |
 | Contacts extras | `gather-extra-data-contacts` | Contact created. |
 | Items extras | `gather-extra-data-items` | Item created, show on catalogus. |

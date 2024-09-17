@@ -36,6 +36,11 @@ class GatherExtraDataContactNotesCommand extends Command
 			$output,
 		);
 		
+		$responsibleMapping = [
+			'text'       => 'vrw_bijzonderheden',
+			'contact_id' => 'vrw_id',
+			'created_at' => 'vrw_toevoegdatum',
+		];
 		$messageMapping = [
 			'kind'       => 'Mld_Mls_id',
 			'text'       => 'Mld_Oms',
@@ -85,15 +90,44 @@ class GatherExtraDataContactNotesCommand extends Command
 			$employeeMapping[$employeeId] = $responsibleId;
 		}
 		
-		$responsibleMapping = [];
+		$responsibleEmailMapping = [];
 		foreach ($responsibleCsvLines as $responsibleCsvLine) {
 			$responsibleId    = $responsibleCsvLine['vrw_id'];
 			$responsibleEmail = $responsibleCsvLine['vrw_email'];
 			
-			$responsibleMapping[$responsibleId] = $responsibleEmail;
+			$responsibleEmailMapping[$responsibleId] = $responsibleEmail;
 		}
 		
 		$contactNoteQueries = [];
+		foreach ($responsibleCsvLines as $responsibleCsvLine) {
+			$text = trim($responsibleCsvLine[$responsibleMapping['text']]);
+			if ($text === '') {
+				continue;
+			}
+			
+			$responsibleId      = $responsibleCsvLine[$responsibleMapping['contact_id']];
+			$responsibleEmail   = $responsibleEmailMapping[$responsibleId];
+			$responsibleCreated = $responsibleCsvLine[$responsibleMapping['created_at']];
+			$responsibleCreated = \DateTime::createFromFormat('Y-n-j H:i:s', $responsibleCreated);
+			
+			$contactNoteQueries[] = "
+				INSERT INTO `note` SET
+				`contact_id` = (
+					SELECT IFNULL(
+						(
+							SELECT `id`
+							FROM `contact`
+							WHERE `email` = '".$responsibleEmail."'
+						), 1
+					)
+				),
+				`created_at` = '".$responsibleCreated->format('Y-m-d H:i:s')."',
+				`text` = '".str_replace("'", "\'", $text)."',
+				`admin_only` = 1,
+				`status` = 'open'
+			;";
+		}
+		
 		foreach ($messageCsvLines as $messageCsvLine) {
 			// filter on kinds meant for contacts
 			$messageKindId = $messageCsvLine[$messageMapping['kind']];
@@ -110,7 +144,7 @@ class GatherExtraDataContactNotesCommand extends Command
 			$text           = trim($messageCsvLine[$messageMapping['text']]);
 			$employeeId     = $messageCsvLine[$messageMapping['created_by']];
 			$responsibleId  = $employeeMapping[$employeeId];
-			$createdByEmail = $responsibleMapping[$responsibleId];
+			$createdByEmail = $responsibleEmailMapping[$responsibleId];
 			
 			$createdAt = $messageCsvLine[$messageMapping['created_at'][0]];
 			if ($createdAt === '') {
@@ -143,7 +177,8 @@ class GatherExtraDataContactNotesCommand extends Command
 				),
 				`created_at` = '".$createdAt->format('Y-m-d H:i:s')."',
 				`text` = '".str_replace("'", "\'", $text)."',
-				`admin_only` = 1
+				`admin_only` = 1,
+				`status` = 'open'
 			;";
 		}
 		

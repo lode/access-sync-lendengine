@@ -46,7 +46,6 @@ class ObfuscateContactsCommand extends Command
 			'State',
 			'Postcode',
 			'Membership number',
-			'custom_notes',
 		];
 		$contactsCsvLines = $service->getExportCsv($dataDirectory.'/LendEngineContacts_'.$timestamp.'.csv', $expectedHeaders, $csvSeparator="\t");
 		$output->writeln('Imported ' . count($contactsCsvLines) . ' contacts');
@@ -65,7 +64,6 @@ class ObfuscateContactsCommand extends Command
 			$obfuscatedCsvLine['City']              = $obfuscatedCsvLine['City'] !== '' ?              $faker->city()  : '';
 			$obfuscatedCsvLine['Postcode']          = $obfuscatedCsvLine['Postcode'] !== '' ?          $faker->postcode()  : '';
 			$obfuscatedCsvLine['Membership number'] = $obfuscatedCsvLine['Membership number'] !== '' ? $faker->randomNumber(3)  : '';
-			$obfuscatedCsvLine['custom_notes']      = $obfuscatedCsvLine['custom_notes'] !== '' ?      $faker->text()  : '';
 			
 			// Lend Engine has a limit of 25 chars ...
 			if (mb_strlen($obfuscatedCsvLine['Last name']) > 25) {
