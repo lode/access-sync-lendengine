@@ -30,7 +30,7 @@ class GatherExtraDataContactNotesCommand extends Command
 		);
 		
 		$memberMapping = [
-			'contact_id'        => 'lid_vrm_id',
+			'contact_id'        => 'lid_vrw_id',
 			'membership_number' => 'lid_key',
 		];
 		$responsibleMapping = [
@@ -62,7 +62,13 @@ class GatherExtraDataContactNotesCommand extends Command
 				continue;
 			}
 			
-			$responsibleId      = $responsibleCsvLine[$responsibleMapping['contact_id']];
+			$responsibleId = $responsibleCsvLine[$responsibleMapping['contact_id']];
+			
+			// skip contacts without membership, as we have no way of connecting the data
+			if (isset($membershipNumberMapping[$responsibleId]) === false) {
+				continue;
+			}
+			
 			$membershipNumber   = $membershipNumberMapping[$responsibleId];
 			$responsibleCreated = $responsibleCsvLine[$responsibleMapping['created_at']];
 			$responsibleCreated = \DateTime::createFromFormat('Y-n-j H:i:s', $responsibleCreated);

@@ -38,7 +38,7 @@ class GatherExtraDataNotesCommand extends Command
 		
 		$memberMapping = [
 			'member_id'         => 'lid_id',
-			'contact_id'        => 'lid_vrm_id',
+			'contact_id'        => 'lid_vrw_id',
 			'membership_number' => 'lid_key',
 		];
 		$responsibleMapping = [
@@ -74,12 +74,12 @@ class GatherExtraDataNotesCommand extends Command
 		
 		$output->writeln('<info>Exporting notes ...</info>');
 		
-		$messageKindMapping = [];
+		$messageKindNameMapping = [];
 		foreach ($messageKindCsvLines as $messageKindCsvLine) {
-			$messageKindId = $messageKindCsvLine[$messageKindMapping['kind_id']];
-			$messageKind   = $messageKindCsvLine[$messageKindMapping['kind_name']];
+			$messageKindId   = $messageKindCsvLine[$messageKindMapping['kind_id']];
+			$messageKindName = $messageKindCsvLine[$messageKindMapping['kind_name']];
 			
-			$messageKindMapping[$messageKindId] = $messageKind;
+			$messageKindNameMapping[$messageKindId] = $messageKindName;
 		}
 		
 		$articleSkuMapping = [];
@@ -112,13 +112,13 @@ class GatherExtraDataNotesCommand extends Command
 		$contactNoteQueries = [];
 		foreach ($messageCsvLines as $messageCsvLine) {
 			// filter on kinds meant for contacts
-			$messageKindId = $messageCsvLine[$messageMapping['kind_id']];
-			$messageKind   = $messageKindMapping[$messageKindId];
-			if ($messageKind !== 'Lid' && $messageKind !== 'Artikel') {
+			$messageKindId   = $messageCsvLine[$messageMapping['kind_id']];
+			$messageKindName = $messageKindNameMapping[$messageKindId];
+			if ($messageKindName !== 'Lid' && $messageKindName !== 'Artikel') {
 				continue;
 			}
 			
-			if ($messageKind === 'Lid') {
+			if ($messageKindName === 'Lid') {
 				// skip for contact references
 				if ($messageCsvLine[$messageMapping['contact_id']] === '') {
 					throw new \Exception('missing contact id');
@@ -139,7 +139,7 @@ class GatherExtraDataNotesCommand extends Command
 					),
 				";
 			}
-			elseif ($messageKind === 'Artikel') {
+			elseif ($messageKindName === 'Artikel') {
 				// skip for item references
 				if ($messageCsvLine[$messageMapping['inventory_item_id']] === '') {
 					throw new \Exception('missing item id');
