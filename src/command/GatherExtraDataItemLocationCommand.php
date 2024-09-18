@@ -18,6 +18,18 @@ use Symfony\Component\Console\Output\OutputInterface;
 #[AsCommand(name: 'gather-extra-data-item-location')]
 class GatherExtraDataItemLocationCommand extends Command
 {
+	private const STATUS_DELETE = -1;
+	private const STATUS_TEMPORARY = 0;
+	private const STATUS_MAPPING = [
+		'Afgekeurd (Tijdelijk)'  => 'Repair',
+		'Afgekeurd-Definitief'   => self::STATUS_DELETE,
+		'Gereed voor uitlenen'   => 'In stock',
+		'Ingenomen: Controleren' => self::STATUS_TEMPORARY,
+		'Initieel'               => self::STATUS_TEMPORARY,
+		'Uitgeleend'             => self::STATUS_TEMPORARY,
+		'Verdwenen/kapot'        => self::STATUS_TEMPORARY,
+	];
+	
 	protected function execute(InputInterface $input, OutputInterface $output): int
 	{
 		$service = new ConvertCsvService();
@@ -76,7 +88,6 @@ class GatherExtraDataItemLocationCommand extends Command
 		}
 		$canonicalArticleMapping = array_flip($canonicalArticleMapping);
 		
-		$itemLocations = [];
 		$itemLocationDataSet = [];
 		$statisticsPerSku = [];
 		foreach ($articleStatusLoggingCsvLines as $articleStatusLoggingCsvLine) {
@@ -95,7 +106,6 @@ class GatherExtraDataItemLocationCommand extends Command
 			$noteText     = trim($articleStatusLoggingCsvLine[$articleStatusLoggingMapping['note_text']]);
 			
 			// only keep the last location for a certain sku
-			$itemLocations[$locationId] = $locationName;
 			$itemLocationDataSet[$itemSku] = [
 				'itemSku'      => $itemSku,
 				'locationName' => $locationName,
@@ -105,14 +115,28 @@ class GatherExtraDataItemLocationCommand extends Command
 			$statisticsPerSku[$itemSku] = $locationName;
 		}
 		
+		$itemLocations = [];
+		foreach ($itemLocationDataSet as $itemLocationData) {
+			$locationName = $itemLocationData['locationName'];
+			$itemLocations[$locationName] = $locationName;
+		}
+		
 		$itemLocationQueries = [];
 		foreach ($itemLocations as $locationName) {
+			$locationAction = self::STATUS_MAPPING[$locationName];
+			if ($locationAction === self::STATUS_TEMPORARY) {
+				$locationName = 'Access - '.$locationName;
+			}
+			else { // delete & already existing
+				continue;
+			}
+			
 			$isAvailable = ($locationName === 'Gereed voor uitlenen') ? '1' : '0';
 			
 			$itemLocationQueries[] = "
 			    INSERT
 			      INTO `inventory_location`
-			       SET `name`         = 'Access - ".$locationName."',
+			       SET `name`         = '".$locationName."',
 			           `is_active`    = 1,
 			           `is_available` = ".$isAvailable.",
 			           `site`         = 1
@@ -120,11 +144,23 @@ class GatherExtraDataItemLocationCommand extends Command
 		}
 		
 		foreach ($itemLocationDataSet as $itemLocationData) {
+			$locationName = $itemLocationData['locationName'];
+			$locationAction = self::STATUS_MAPPING[$locationName];
+			if ($locationAction === self::STATUS_DELETE) {
+				continue;
+			}
+			elseif ($locationAction === self::STATUS_TEMPORARY) {
+				$locationName = 'Access - '.$locationName;
+			}
+			else {
+				$locationName = $locationAction;
+			}
+			
 			$itemLocationQueries[] = "
 			       SET @locationId = (
 			               SELECT `id`
 			                 FROM `inventory_location`
-			                WHERE `name` = 'Access - ".$itemLocationData['locationName']."'
+			                WHERE `name` = '".$locationName."'
 			           )
 			;";
 			
