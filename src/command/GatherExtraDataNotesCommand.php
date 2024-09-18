@@ -10,7 +10,6 @@ use Lode\AccessSyncLendEngine\specification\EmployeeSpecification;
 use Lode\AccessSyncLendEngine\specification\MemberSpecification;
 use Lode\AccessSyncLendEngine\specification\MessageKindSpecification;
 use Lode\AccessSyncLendEngine\specification\MessageSpecification;
-use Lode\AccessSyncLendEngine\specification\ResponsibleSpecification;
 use Symfony\Component\Console\Attribute\AsCommand;
 use Symfony\Component\Console\Command\Command;
 use Symfony\Component\Console\Input\InputInterface;
@@ -37,17 +36,25 @@ class GatherExtraDataNotesCommand extends Command
 			$output,
 		);
 		
+		$memberMapping = [
+			'member_id'         => 'lid_id',
+			'contact_id'        => 'lid_vrm_id',
+			'membership_number' => 'lid_key',
+		];
 		$responsibleMapping = [
-			'contact_id'    => 'vrw_id',
-			'contact_email' => 'vrw_email',
+			'contact_id' => 'vrw_id',
 		];
 		$messageMapping = [
-			'kind'              => 'Mld_Mls_id',
+			'kind_id'           => 'Mld_Mls_id',
 			'text'              => 'Mld_Oms',
 			'contact_id'        => 'Mld_Lid_id',
 			'inventory_item_id' => 'Mld_Art_id',
 			'created_by'        => 'mld_mdw_id_toevoeg',
 			'created_at'        => ['Mld_GemeldDatum', 'mld_vanafdatum'],
+		];
+		$messageKindMapping = [
+			'kind_id'   => 'Mls_id',
+			'kind_name' => 'Mls_Naam',
 		];
 		
 		$messageCsvLines = $service->getExportCsv($dataDirectory.'/Melding.csv', (new MessageSpecification())->getExpectedHeaders());
@@ -65,15 +72,12 @@ class GatherExtraDataNotesCommand extends Command
 		$employeeCsvLines = $service->getExportCsv($dataDirectory.'/Medewerker.csv', (new EmployeeSpecification())->getExpectedHeaders());
 		$output->writeln('Imported ' . count($employeeCsvLines). ' medewerkers');
 		
-		$responsibleCsvLines = $service->getExportCsv($dataDirectory.'/Verantwoordelijke.csv', (new ResponsibleSpecification())->getExpectedHeaders());
-		$output->writeln('Imported ' . count($responsibleCsvLines). ' verantwoordelijken');
-		
 		$output->writeln('<info>Exporting notes ...</info>');
 		
 		$messageKindMapping = [];
 		foreach ($messageKindCsvLines as $messageKindCsvLine) {
-			$messageKindId = $messageKindCsvLine['Mls_id'];
-			$messageKind   = $messageKindCsvLine['Mls_Naam'];
+			$messageKindId = $messageKindCsvLine[$messageKindMapping['kind_id']];
+			$messageKind   = $messageKindCsvLine[$messageKindMapping['kind_name']];
 			
 			$messageKindMapping[$messageKindId] = $messageKind;
 		}
@@ -86,12 +90,15 @@ class GatherExtraDataNotesCommand extends Command
 			$articleSkuMapping[$articleId] = $articleSku;
 		}
 		
-		$membershipNumberMapping = [];
+		$memberMembershipNumberMapping      = [];
+		$responsibleMembershipNumberMapping = [];
 		foreach ($memberCsvLines as $memberCsvLine) {
-			$memberId     = $memberCsvLine['lid_id'];
-			$memberNumber = $memberCsvLine['lid_key'];
+			$memberId      = $memberCsvLine[$memberMapping['member_id']];
+			$responsibleId = $memberCsvLine[$memberMapping['contact_id']];
+			$memberNumber  = $memberCsvLine[$memberMapping['membership_number']];
 			
-			$membershipNumberMapping[$memberId] = $memberNumber;
+			$memberMembershipNumberMapping[$memberId]           = $memberNumber;
+			$responsibleMembershipNumberMapping[$responsibleId] = $memberNumber;
 		}
 		
 		$employeeMapping = [];
@@ -102,18 +109,10 @@ class GatherExtraDataNotesCommand extends Command
 			$employeeMapping[$employeeId] = $responsibleId;
 		}
 		
-		$responsibleEmailMapping = [];
-		foreach ($responsibleCsvLines as $responsibleCsvLine) {
-			$responsibleId    = $responsibleCsvLine[$responsibleMapping['contact_id']];
-			$responsibleEmail = $responsibleCsvLine[$responsibleMapping['contact_email']];
-			
-			$responsibleEmailMapping[$responsibleId] = $responsibleEmail;
-		}
-		
 		$contactNoteQueries = [];
 		foreach ($messageCsvLines as $messageCsvLine) {
 			// filter on kinds meant for contacts
-			$messageKindId = $messageCsvLine[$messageMapping['kind']];
+			$messageKindId = $messageCsvLine[$messageMapping['kind_id']];
 			$messageKind   = $messageKindMapping[$messageKindId];
 			if ($messageKind !== 'Lid' && $messageKind !== 'Artikel') {
 				continue;
@@ -126,7 +125,7 @@ class GatherExtraDataNotesCommand extends Command
 				}
 				
 				$memberId         = $messageCsvLine[$messageMapping['contact_id']];
-				$membershipNumber = $membershipNumberMapping[$memberId];
+				$membershipNumber = $memberMembershipNumberMapping[$memberId];
 				
 				$relationQuery = "
 					`contact_id` = (
@@ -165,10 +164,10 @@ class GatherExtraDataNotesCommand extends Command
 				throw new \Exception('unsupported message kind');
 			}
 			
-			$text           = trim($messageCsvLine[$messageMapping['text']]);
-			$employeeId     = $messageCsvLine[$messageMapping['created_by']];
-			$responsibleId  = $employeeMapping[$employeeId];
-			$createdByEmail = $responsibleEmailMapping[$responsibleId];
+			$text            = trim($messageCsvLine[$messageMapping['text']]);
+			$employeeId      = $messageCsvLine[$messageMapping['created_by']];
+			$responsibleId   = $employeeMapping[$employeeId];
+			$createdByNumber = $responsibleMembershipNumberMapping[$responsibleId];
 			
 			$createdAt = $messageCsvLine[$messageMapping['created_at'][0]];
 			if ($createdAt === '') {
@@ -183,7 +182,7 @@ class GatherExtraDataNotesCommand extends Command
 						(
 							SELECT `id`
 							FROM `contact`
-							WHERE `email` = '".$createdByEmail."'
+							WHERE `membership_number` = '".$createdByNumber."'
 						), 1
 					)
 				),

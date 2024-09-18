@@ -63,7 +63,6 @@ class ObfuscateContactsCommand extends Command
 			$obfuscatedCsvLine['Address line 1']    = $obfuscatedCsvLine['Address line 1'] !== '' ?    $faker->streetName(). ' '.$faker->randomNumber(4) : '';
 			$obfuscatedCsvLine['City']              = $obfuscatedCsvLine['City'] !== '' ?              $faker->city()  : '';
 			$obfuscatedCsvLine['Postcode']          = $obfuscatedCsvLine['Postcode'] !== '' ?          $faker->postcode()  : '';
-			$obfuscatedCsvLine['Membership number'] = $obfuscatedCsvLine['Membership number'] !== '' ? $faker->randomNumber(3)  : '';
 			
 			// Lend Engine has a limit of 25 chars ...
 			if (mb_strlen($obfuscatedCsvLine['Last name']) > 25) {
