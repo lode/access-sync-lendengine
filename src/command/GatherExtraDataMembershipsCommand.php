@@ -55,6 +55,10 @@ class GatherExtraDataMembershipsCommand extends Command
 			if ($memberCsvLine[$memberMapping['expires_at']] !== '') {
 				$expiresAt = \DateTime::createFromFormat('Y-n-j H:i:s', $memberCsvLine[$memberMapping['expires_at']]);
 			}
+			else {
+				$expiresAt = clone $startsAt;
+				$expiresAt->modify('+1 year');
+			}
 			
 			$membershipQueries[] = "
 				INSERT INTO `membership` SET
@@ -68,7 +72,7 @@ class GatherExtraDataMembershipsCommand extends Command
 				`price` = '".$membershipPrice."',
 				`created_at` = NOW(),
 				`starts_at` = '".$startsAt->format('Y-m-d H:i:s')."',
-				`expires_at` = ".($expiresAt === null ? 'NULL' : "'".$expiresAt->format('Y-m-d H:i:s')."'")."
+				`expires_at` = '".$expiresAt->format('Y-m-d H:i:s')."',
 				`status` = 'ACTIVE'
 			;";
 		}
