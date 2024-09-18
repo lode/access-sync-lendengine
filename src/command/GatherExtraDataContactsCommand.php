@@ -19,10 +19,6 @@ use Symfony\Component\Console\Output\OutputInterface;
 #[AsCommand(name: 'gather-extra-data-contacts')]
 class GatherExtraDataContactsCommand extends Command
 {
-	private const MEMBER_STATUS_ACTIVE   = '1';
-	private const MEMBER_STATUS_CANCELED = '2';
-	private const MEMBER_STATUS_INACTIVE = '3';
-	
 	protected function execute(InputInterface $input, OutputInterface $output): int
 	{
 		$service = new ConvertCsvService();
@@ -49,46 +45,35 @@ class GatherExtraDataContactsCommand extends Command
 			'created_at' => 'vrw_toevoegdatum',
 			'email'      => 'vrw_email',
 		];
+		$memberMapping = [
+			'contact_id'        => 'lid_vrw_id',
+			'membership_number' => 'lid_key',
+		];
 		
-		$responsibleMemberMapping = [];
-		$nonActiveResponsibleIds = [];
+		$membershipNumberMapping = [];
 		foreach ($memberCsvLines as $memberCsvLine) {
-			$responsibleId = $memberCsvLine['lid_vrw_id'];
-			if ($responsibleId === '') {
-				continue;
-			}
+			$responsibleId    = $memberCsvLine[$memberMapping['contact_id']];
+			$membershipNumber = $memberCsvLine[$memberMapping['membership_number']];
 			
-			$memberStatusId = $memberCsvLine['lid_lis_id'];
-			if ($memberStatusId !== self::MEMBER_STATUS_ACTIVE) {
-				$nonActiveResponsibleIds[] = $responsibleId;
-				continue;
-			}
-			
-			if (isset($responsibleMemberMapping[$responsibleId])) {
-				throw new \Exception('multiple active members found');
-			}
-			
-			$responsibleMemberMapping[$responsibleId] = $memberCsvLine;
+			$membershipNumberMapping[$responsibleId] = $membershipNumber;
 		}
 		
 		$contactQueries = [];
 		foreach ($responsibleCsvLines as $responsibleCsvLine) {
-			// skip non-active members
 			$responsibleId = $responsibleCsvLine['vrw_id'];
-			if (isset($responsibleMemberMapping[$responsibleId]) === false) {
-				continue;
-			}
-			if ($responsibleCsvLine['vrw_email'] === '') {
+			
+			// skip contacts without membership, as we have no way of connecting the data
+			if (isset($membershipNumberMapping[$responsibleId]) === false) {
 				continue;
 			}
 			
-			$email     = $responsibleCsvLine[$responsibleMapping['email']];
-			$createdAt = \DateTime::createFromFormat('Y-n-j H:i:s', $responsibleCsvLine[$responsibleMapping['created_at']]);
+			$membershipNumber = $membershipNumberMapping[$responsibleId];
+			$createdAt        = \DateTime::createFromFormat('Y-n-j H:i:s', $responsibleCsvLine[$responsibleMapping['created_at']]);
 			
 			$contactQueries[] = "
 				UPDATE `contact` SET
 				`created_at` = '".$createdAt->format('Y-m-d H:i:s')."'
-				WHERE `email` = '".$email."'
+				WHERE `membership_number` = '".$membershipNumber."'
 			;";
 		}
 		
