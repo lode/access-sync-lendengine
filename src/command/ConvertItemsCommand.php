@@ -88,8 +88,24 @@ class ConvertItemsCommand extends Command
 			$brandMapping[$brandCsvLine['mrk_id']] = $brandCsvLine['mrk_naam'];
 		}
 		
+		$canonicalArticleMapping = [];
+		foreach ($articleCsvLines as $articleCsvLine) {
+			$articleId  = $articleCsvLine['art_id'];
+			$articleSku = $articleCsvLine['art_key'];
+			
+			$canonicalArticleMapping[$articleSku] = $articleId;
+		}
+		
 		$itemsConverted = [];
 		foreach ($articleCsvLines as $articleCsvLine) {
+			// skip non-last items of duplicate SKUs
+			// SKUs are re-used and old articles are made inactive
+			$articleId  = $articleCsvLine['art_id'];
+			$articleSku = $articleCsvLine['art_key'];
+			if ($canonicalArticleMapping[$articleSku] !== $articleId) {
+				continue;
+			}
+			
 			$itemConverted = [
 				'Code'                 => null,
 				'Type'                 => 'loan',
