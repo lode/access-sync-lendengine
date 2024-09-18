@@ -74,7 +74,7 @@ class GatherExtraDataItemImagesCommand extends Command
 							SELECT `id`
 							FROM `inventory_item`
 							WHERE `sku` = '".$imageArticleSku."'
-						), 1
+						), 1000
 					)
 				),
 				`image_name` = '".$imageNewFileName."'

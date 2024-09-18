@@ -71,7 +71,7 @@ class GatherExtraDataItemPartsCommand extends Command
 							SELECT `id`
 							FROM `inventory_item`
 							WHERE `sku` = '".$itemSku."'
-						), 1
+						), 1000
 					)
 				),
 				`description` = '".str_replace("'", "\'", $description)."',

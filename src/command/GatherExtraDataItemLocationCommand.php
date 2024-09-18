@@ -127,7 +127,7 @@ class GatherExtraDataItemLocationCommand extends Command
 			                          SELECT `id`
 			                            FROM `inventory_item`
 			                           WHERE `sku` = '".$itemSku."'
-			                      ), 1
+			                      ), 1000
 			               )
 			           ),
 			           `inventory_location_id` = @locationId,
@@ -145,7 +145,7 @@ class GatherExtraDataItemLocationCommand extends Command
 				                          SELECT `id`
 				                            FROM `inventory_item`
 				                           WHERE `sku` = '".$itemSku."'
-				                      ), 1
+				                      ), 1000
 				               )
 				           ),
 				           `created_at` = '".$logCreatedAt->format('Y-m-d H:i:s')."'

@@ -155,7 +155,7 @@ class GatherExtraDataNotesCommand extends Command
 								SELECT `id`
 								FROM `inventory_item`
 								WHERE `sku` = '".$articleSku."'
-							), 1
+							), 1000
 						)
 					),
 				";
