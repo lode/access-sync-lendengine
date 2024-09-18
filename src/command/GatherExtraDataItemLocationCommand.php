@@ -59,14 +59,6 @@ class GatherExtraDataItemLocationCommand extends Command
 		
 		$output->writeln('<info>Exporting item locations ...</info>');
 		
-		$itemMapping = [];
-		foreach ($articleCsvLines as $articleCsvLine) {
-			$itemId  = $articleCsvLine[$articleMapping['item_id']];
-			$itemSku = $articleCsvLine[$articleMapping['item_sku']];
-			
-			$itemMapping[$itemId] = $itemSku;
-		}
-		
 		$locationMapping = [];
 		foreach ($articleStatusCsvLines as $articleStatusCsvLine) {
 			$locationId   = $articleStatusCsvLine[$articleStatusMapping['location_id']];
@@ -75,15 +67,27 @@ class GatherExtraDataItemLocationCommand extends Command
 			$locationMapping[$locationId] = $locationName;
 		}
 		
+		$canonicalArticleMapping = [];
+		foreach ($articleCsvLines as $articleCsvLine) {
+			$articleId  = $articleCsvLine['art_id'];
+			$articleSku = $articleCsvLine['art_key'];
+			
+			$canonicalArticleMapping[$articleSku] = $articleId;
+		}
+		$canonicalArticleMapping = array_flip($canonicalArticleMapping);
+		
 		$itemLocationQueries = [];
 		$locationCreated = [];
 		foreach ($articleStatusLoggingCsvLines as $articleStatusLoggingCsvLine) {
-			$itemId       = $articleStatusLoggingCsvLine[$articleStatusLoggingMapping['item_id']];
-			if (isset($itemMapping[$itemId]) === false) {
+			$itemId = $articleStatusLoggingCsvLine[$articleStatusLoggingMapping['item_id']];
+			
+			// skip non-last items of duplicate SKUs
+			// SKUs are re-used and old articles are made inactive
+			if (isset($canonicalArticleMapping[$itemId]) === false) {
 				continue;
 			}
 			
-			$itemSku      = $itemMapping[$itemId];
+			$itemSku      = $canonicalArticleMapping[$itemId];
 			$locationId   = $articleStatusLoggingCsvLine[$articleStatusLoggingMapping['location_id']];
 			$locationName = $locationMapping[$locationId];
 			$logCreatedAt = \DateTime::createFromFormat('Y-n-j H:i:s', $articleStatusLoggingCsvLine[$articleStatusLoggingMapping['created_at']]);
@@ -102,6 +106,8 @@ class GatherExtraDataItemLocationCommand extends Command
 				           `is_available` = 0,
 				           `site`         = 1
 				;";
+				
+				$locationCreated[$locationId] = true;
 			}
 			
 			$itemLocationQueries[] = "
@@ -114,7 +120,7 @@ class GatherExtraDataItemLocationCommand extends Command
 			
 			$itemLocationQueries[] = "
 			    UPDATE `inventory_item`
-			       SET `inventory_location_id` = @locationId
+			       SET `current_location_id` = @locationId
 			     WHERE `sku` = '".$itemSku."'
 			;";
 			
@@ -153,10 +159,15 @@ class GatherExtraDataItemLocationCommand extends Command
 			}
 		}
 		
-		$convertedFileName = 'LendEngineItemLocation_ExtraData_'.time().'.sql';
-		file_put_contents($dataDirectory.'/'.$convertedFileName, implode(PHP_EOL, $itemLocationQueries));
+		$output->writeln('<info>Done. ' . count($itemLocationQueries) . ' SQLs for item locations stored in:</info>');
 		
-		$output->writeln('<info>Done. ' . count($itemLocationQueries) . ' SQLs for item locations stored in ' . $convertedFileName . '</info>');
+		$itemLocationQueryChunks = array_chunk($itemLocationQueries, 25000);
+		foreach ($itemLocationQueryChunks as $index => $itemLocationQueryChunk) {
+			$convertedFileName = 'LendEngineItemLocation_ExtraData_'.time().'_chunk_'.($index+1).'.sql';
+			file_put_contents($dataDirectory.'/'.$convertedFileName, implode(PHP_EOL, $itemLocationQueryChunk));
+			
+			$output->writeln('- '.$convertedFileName);
+		}
 		
 		return Command::SUCCESS;
 	}

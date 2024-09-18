@@ -28,6 +28,7 @@ class GatherExtraDataItemsCommand extends Command
 		);
 		
 		$articleMapping = [
+			'id'              => 'art_id',
 			'show_on_website' => 'art_webcatalogus',
 			'created_at'      => 'art_aankoopdatum',
 			'sku'             => 'art_key',
@@ -38,19 +39,35 @@ class GatherExtraDataItemsCommand extends Command
 		
 		$output->writeln('<info>Exporting items ...</info>');
 		
+		$canonicalArticleMapping = [];
+		foreach ($articleCsvLines as $articleCsvLine) {
+			$articleId  = $articleCsvLine[$articleMapping['id']];
+			$articleSku = $articleCsvLine[$articleMapping['sku']];
+			
+			$canonicalArticleMapping[$articleSku] = $articleId;
+		}
+		
 		$itemQueries = [];
 		foreach ($articleCsvLines as $articleCsvLine) {
+			// skip non-last items of duplicate SKUs
+			// SKUs are re-used and old articles are made inactive
+			$articleId  = $articleCsvLine[$articleMapping['id']];
+			$articleSku = $articleCsvLine[$articleMapping['sku']];
+			
+			if ($canonicalArticleMapping[$articleSku] !== $articleId) {
+				continue;
+			}
+			
 			$showOnWebsite = (bool) $articleCsvLine[$articleMapping['show_on_website']];
 			$createdAt     = \DateTime::createFromFormat('Y-n-j H:i:s', $articleCsvLine[$articleMapping['created_at']]);
 			$updatedAt     = $createdAt;
-			$sku           = $articleCsvLine[$articleMapping['sku']];
 			
 			$itemQueries[] = "
 				UPDATE `inventory_item` SET
 				`show_on_website` = '".($showOnWebsite === false ? 0 : 1)."',
 				`created_at` = '".$createdAt->format('Y-m-d H:i:s')."',
 				`updated_at` = '".$updatedAt->format('Y-m-d H:i:s')."'
-				WHERE `sku` = '".$sku."'
+				WHERE `sku` = '".$articleSku."'
 			;";
 		}
 		

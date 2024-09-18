@@ -82,14 +82,6 @@ class GatherExtraDataNotesCommand extends Command
 			$messageKindNameMapping[$messageKindId] = $messageKindName;
 		}
 		
-		$articleSkuMapping = [];
-		foreach ($articleCsvLines as $articleCsvLine) {
-			$articleId  = $articleCsvLine['art_id'];
-			$articleSku = $articleCsvLine['art_key'];
-			
-			$articleSkuMapping[$articleId] = $articleSku;
-		}
-		
 		$memberMembershipNumberMapping      = [];
 		$responsibleMembershipNumberMapping = [];
 		foreach ($memberCsvLines as $memberCsvLine) {
@@ -108,6 +100,15 @@ class GatherExtraDataNotesCommand extends Command
 			
 			$employeeMapping[$employeeId] = $responsibleId;
 		}
+		
+		$canonicalArticleMapping = [];
+		foreach ($articleCsvLines as $articleCsvLine) {
+			$articleId  = $articleCsvLine['art_id'];
+			$articleSku = $articleCsvLine['art_key'];
+			
+			$canonicalArticleMapping[$articleSku] = $articleId;
+		}
+		$canonicalArticleMapping = array_flip($canonicalArticleMapping);
 		
 		$contactNoteQueries = [];
 		foreach ($messageCsvLines as $messageCsvLine) {
@@ -146,7 +147,14 @@ class GatherExtraDataNotesCommand extends Command
 				}
 				
 				$articleId  = $messageCsvLine[$messageMapping['inventory_item_id']];
-				$articleSku = $articleSkuMapping[$articleId];
+				
+				// skip non-last items of duplicate SKUs
+				// SKUs are re-used and old articles are made inactive
+				if (isset($canonicalArticleMapping[$articleId]) === false) {
+					continue;
+				}
+				
+				$articleSku = $canonicalArticleMapping[$articleId];
 				
 				$relationQuery = "
 					`inventory_item_id` = (

@@ -43,25 +43,33 @@ class GatherExtraDataItemPartsCommand extends Command
 		
 		$output->writeln('<info>Exporting parts ...</info>');
 		
-		$articleSkuMapping = [];
+		$canonicalArticleMapping = [];
 		foreach ($articleCsvLines as $articleCsvLine) {
 			$articleId  = $articleCsvLine['art_id'];
 			$articleSku = $articleCsvLine['art_key'];
 			
-			$articleSkuMapping[$articleId] = $articleSku;
+			$canonicalArticleMapping[$articleSku] = $articleId;
 		}
+		$canonicalArticleMapping = array_flip($canonicalArticleMapping);
 		
 		$itemPartQueries = [];
 		foreach ($partCsvLines as $partCsvLine) {
+			$articleId = $partCsvLine[$partMapping['article_id']];
+			
+			// skip non-last items of duplicate SKUs
+			// SKUs are re-used and old articles are made inactive
+			if (isset($canonicalArticleMapping[$articleId]) === false) {
+				continue;
+			}
+			
+			$itemSku = $canonicalArticleMapping[$articleId];
+			
 			$count = $partCsvLine[$partMapping['part_count']];
 			
 			$description = implode(' / ', array_filter([
 				$partCsvLine[$partMapping['part_description'][0]],
 				$partCsvLine[$partMapping['part_description'][1]]
 			]));
-			
-			$articleId = $partCsvLine[$partMapping['article_id']];
-			$itemSku   = $articleSkuMapping[$articleId];
 			
 			$itemPartQueries[] = "
 				INSERT INTO `item_part` SET

@@ -4,6 +4,8 @@ declare(strict_types=1);
 
 namespace Lode\AccessSyncLendEngine\command;
 
+use Lode\AccessSyncLendEngine\service\ConvertCsvService;
+use Lode\AccessSyncLendEngine\specification\ArticleSpecification;
 use Symfony\Component\Console\Attribute\AsCommand;
 use Symfony\Component\Console\Command\Command;
 use Symfony\Component\Console\Helper\ProgressBar;
@@ -21,10 +23,19 @@ class GatherExtraDataItemImagesCommand extends Command
 	
 	protected function execute(InputInterface $input, OutputInterface $output): int
 	{
+		$service             = new ConvertCsvService();
 		$dataDirectory       = dirname(dirname(__DIR__)).'/data';
 		$imagesDirectoryName = $input->getArgument('imagesDirectoryName');
 		$imagesDirectory     = realpath($dataDirectory.'/'.$imagesDirectoryName);
 		$exportDirectory     = $dataDirectory.'/export_'.time();
+		
+		$service->requireInputCsvs(
+			$dataDirectory,
+			[
+				'Artikel.csv',
+			],
+			$output,
+		);
 		
 		if ($imagesDirectoryName === '') {
 			throw new \Exception('missing images directory name');
@@ -35,32 +46,50 @@ class GatherExtraDataItemImagesCommand extends Command
 		if (str_starts_with($imagesDirectory, $dataDirectory.'/') === false) {
 			throw new \Exception('images directory not a sub directory of data/');
 		}
-		
-		$imagePaths = [
-			...glob($imagesDirectory.'/*.jpg'),
-			...glob($imagesDirectory.'/*.JPG'),
-			...glob($imagesDirectory.'/*.jpeg'),
-			...glob($imagesDirectory.'/*.JPEG'),
-		];
-		if ($imagePaths === []) {
+		if (glob($imagesDirectory.'/*') === []) {
 			throw new \Exception('images directory does not contain any images');
 		}
 		
+		$articleCsvLines = $service->getExportCsv($dataDirectory.'/Artikel.csv', (new ArticleSpecification())->getExpectedHeaders());
+		$output->writeln('Imported ' . count($articleCsvLines). ' artikelen');
+		
 		$output->writeln('<info>Exporting item images ...</info>');
+		
+		$knownArticleSKUs = [];
+		foreach ($articleCsvLines as $articleCsvLine) {
+			$articleSku = $articleCsvLine['art_key'];
+			
+			$knownArticleSKUs[$articleSku] = true;
+		}
 		
 		mkdir($exportDirectory.'/thumbs/', recursive: true);
 		mkdir($exportDirectory.'/large/', recursive: true);
 		
-		$progressBar = new ProgressBar($output, count($imagePaths));
+		$progressBar = new ProgressBar($output, count($knownArticleSKUs));
 		$progressBar->setFormat('debug');
 		$progressBar->start();
 		
 		$itemImagesQueries = [];
-		foreach ($imagePaths as $imagePath) {
+		foreach ($knownArticleSKUs as $articleSku => $null) {
 			$progressBar->advance();
 			
-			$imageArticleSku  = basename($imagePath);
-			$imageArticleSku  = substr($imageArticleSku, 0, strpos($imageArticleSku, '.'));
+			$imagePaths = glob($imagesDirectory.'/'.$articleSku.'.*');
+			if ($imagePaths === []) {
+				continue;
+			}
+			
+			$imagePath = reset($imagePaths);
+			if (count($imagePaths) > 1) {
+				$output->writeln('<comment>Found multiple images for '.$articleSku.', picked '.basename($imagePath).'</comment>');
+			}
+			
+			// @todo support different extensions
+			$fileExtension = strtolower(substr($imagePath, strrpos($imagePath, '.') + 1));
+			if ($fileExtension !== 'jpg' && $fileExtension !== 'jpeg') {
+				$output->writeln('<comment>Found non-jpg image for '.$articleSku.', skipping</comment>');
+				continue;
+			}
+			
 			$imageNewFileName = uniqid().'.jpg';
 			
 			$this->convertImage($imagePath, $exportDirectory.'/thumbs/'.$imageNewFileName, 100);
@@ -73,7 +102,7 @@ class GatherExtraDataItemImagesCommand extends Command
 						(
 							SELECT `id`
 							FROM `inventory_item`
-							WHERE `sku` = '".$imageArticleSku."'
+							WHERE `sku` = '".$articleSku."'
 						), 1000
 					)
 				),
