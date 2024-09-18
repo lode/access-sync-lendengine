@@ -51,6 +51,8 @@ class GatherExtraDataNotesCommand extends Command
 			'inventory_item_id' => 'Mld_Art_id',
 			'created_by'        => 'mld_mdw_id_toevoeg',
 			'created_at'        => ['Mld_GemeldDatum', 'mld_vanafdatum'],
+			'status_closed'     => 'Mld_GemeldDatum',
+			'status_open'       => 'mld_tmdatum',
 		];
 		$messageKindMapping = [
 			'kind_id'   => 'Mls_id',
@@ -183,6 +185,18 @@ class GatherExtraDataNotesCommand extends Command
 			}
 			$createdAt = \DateTime::createFromFormat('Y-n-j H:i:s', $createdAt);
 			
+			if ($messageCsvLine[$messageMapping['status_closed']] !== '') {
+				$status = "'closed'";
+			}
+			elseif ($messageCsvLine[$messageMapping['status_open']] !== '') {
+				$status = "'open'";
+			}
+			else {
+				// another option is to set these to NULL, but they seem to be written as reminder notes
+				// unclear why they are different
+				$status = "'open'";
+			}
+			
 			$contactNoteQueries[] = "
 				INSERT INTO `note` SET
 				`created_by` = (
@@ -198,7 +212,7 @@ class GatherExtraDataNotesCommand extends Command
 				`created_at` = '".$createdAt->format('Y-m-d H:i:s')."',
 				`text` = '".str_replace("'", "\'", $text)."',
 				`admin_only` = 1,
-				`status` = 'open'
+				`status` = ".$status."
 			;";
 		}
 		
