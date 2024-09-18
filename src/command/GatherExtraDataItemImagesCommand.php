@@ -67,7 +67,7 @@ class GatherExtraDataItemImagesCommand extends Command
 			$this->convertImage($imagePath, $exportDirectory.'/large/'.$imageNewFileName, 1200);
 			
 			$itemImagesQueries[] = "
-				INSERT INTO `images` SET
+				INSERT INTO `image` SET
 				`inventory_item_id` = (
 					SELECT IFNULL(
 						(
