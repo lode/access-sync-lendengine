@@ -70,7 +70,7 @@ class GatherExtraDataMembershipsCommand extends Command
 				),
 				`created_by` = 1,
 				`price` = '".$membershipPrice."',
-				`created_at` = NOW(),
+				`created_at` = '".$startsAt->format('Y-m-d H:i:s')."',
 				`starts_at` = '".$startsAt->format('Y-m-d H:i:s')."',
 				`expires_at` = '".$expiresAt->format('Y-m-d H:i:s')."',
 				`status` = 'ACTIVE'
