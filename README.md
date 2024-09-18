@@ -21,11 +21,14 @@ Sync data from [SpeelotheekSoftware's Access](https://speelotheeksoftware.nl/) t
 
 - [Export Access tables](/docs/Export%20Access%20tables.md)
 	- Artikel
+	- ArtikelStatus
+	- ArtikelStatusLogging
 	- ArtikelType
 	- ArtikelUitleenDuur
 	- Lid
 	- LidStatus
 	- LidType
+	- Medewerker
 	- Melding
 	- MeldingSoort
 	- Merk
@@ -61,6 +64,7 @@ Each script migrates a part of the data, you can choose which to run and do a ma
 | Parts | `gather-extra-data-item-parts` | Count, description. |
 | Images | `gather-extra-data-item-images photos` | Item images (SQL and converted image files). |
 | Memberships | `gather-extra-data-memberships [membershipId] [membershipPrice]` | Contact <> Subscription, period.<br>Use the id and price from the membership type created in step 2.<br>If you have multiple different memberships run this script multiple times with each subset of the export and different membership types. |
+| Item status | `gather-extra-data-item-location` | Locations ("status") for items. |
 | Notes | `gather-extra-data-notes` | Messages ("meldingen") for contacts and items. |
 | Contact notes | `gather-extra-data-contact-notes` | Specifics ("bijzonderheden") for contacts. |
 | Items extras | `gather-extra-data-items` | Item created, show on catalogus. |
@@ -128,27 +132,10 @@ At this moment the best way to migrate this is by adjusting the part description
 
 Later, this might be done automatically.
 
-### Item status (maintenance, loan status, current location, loan history)
-
-In Access this is an _item status_ is "Onderhoud" / "Uitgeleend" / "Afgekeurd" / etc.
-In Lend Engine this is an _item location_ ("Repair" / etc.) and _loan status_ (e.g. "On loan").
-
-- Create the item locations (Admin » Settings » Locations » Add an item location) you want to have.
-- Also create an temporary item location for items currently on loan (e.g. "Uitgeleend in Access").
-  This is needed as loan history can't (yet) be migrated.
-  This item location can be cleaned up once all items are checked in and all loans are actual loans in Lend Engine.
-- In Access filter on the special statuses.
-- In Lend Engine list items (Admin » Items » Browse items).
-- Open each item from the Access list in Lend Engine and change location (Move / Service) based on its status in Access.
-
-Later, this might be done automatically.
-
 
 ## To Do
 
 - Part mutations (needs LE implementation and adjusted migration afterwards)
-- Maintenance
-- Loan status / current location / loan history
 
 
 ## Contributing
