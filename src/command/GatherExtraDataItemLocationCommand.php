@@ -76,8 +76,9 @@ class GatherExtraDataItemLocationCommand extends Command
 		}
 		$canonicalArticleMapping = array_flip($canonicalArticleMapping);
 		
-		$itemLocationQueries = [];
-		$locationCreated = [];
+		$itemLocations = [];
+		$itemLocationDataSet = [];
+		$statisticsPerSku = [];
 		foreach ($articleStatusLoggingCsvLines as $articleStatusLoggingCsvLine) {
 			$itemId = $articleStatusLoggingCsvLine[$articleStatusLoggingMapping['item_id']];
 			
@@ -93,35 +94,44 @@ class GatherExtraDataItemLocationCommand extends Command
 			$logCreatedAt = \DateTime::createFromFormat('Y-n-j H:i:s', $articleStatusLoggingCsvLine[$articleStatusLoggingMapping['created_at']]);
 			$noteText     = trim($articleStatusLoggingCsvLine[$articleStatusLoggingMapping['note_text']]);
 			
-			if (isset($locationCreated[$locationId]) === false) {
-				if ($locationName === 'Gereed voor uitlenen') {
-					continue;
-				}
-				
-				$itemLocationQueries[] = "
-				    INSERT
-				      INTO `inventory_location`
-				       SET `name`         = 'Access - ".$locationName."',
-				           `is_active`    = 1,
-				           `is_available` = 0,
-				           `site`         = 1
-				;";
-				
-				$locationCreated[$locationId] = true;
-			}
+			// only keep the last location for a certain sku
+			$itemLocations[$locationId] = $locationName;
+			$itemLocationDataSet[$itemSku] = [
+				'itemSku'      => $itemSku,
+				'locationName' => $locationName,
+				'logCreatedAt' => $logCreatedAt,
+				'noteText'     => $noteText,
+			];
+			$statisticsPerSku[$itemSku] = $locationName;
+		}
+		
+		$itemLocationQueries = [];
+		foreach ($itemLocations as $locationName) {
+			$isAvailable = ($locationName === 'Gereed voor uitlenen') ? '1' : '0';
 			
+			$itemLocationQueries[] = "
+			    INSERT
+			      INTO `inventory_location`
+			       SET `name`         = 'Access - ".$locationName."',
+			           `is_active`    = 1,
+			           `is_available` = ".$isAvailable.",
+			           `site`         = 1
+			;";
+		}
+		
+		foreach ($itemLocationDataSet as $itemLocationData) {
 			$itemLocationQueries[] = "
 			       SET @locationId = (
 			               SELECT `id`
 			                 FROM `inventory_location`
-			                WHERE `name` = 'Access - ".$locationName."'
+			                WHERE `name` = 'Access - ".$itemLocationData['locationName']."'
 			           )
 			;";
 			
 			$itemLocationQueries[] = "
 			    UPDATE `inventory_item`
 			       SET `current_location_id` = @locationId
-			     WHERE `sku` = '".$itemSku."'
+			     WHERE `sku` = '".$itemLocationData['itemSku']."'
 			;";
 			
 			$itemLocationQueries[] = "
@@ -132,42 +142,49 @@ class GatherExtraDataItemLocationCommand extends Command
 			                      (
 			                          SELECT `id`
 			                            FROM `inventory_item`
-			                           WHERE `sku` = '".$itemSku."'
+			                           WHERE `sku` = '".$itemLocationData['itemSku']."'
 			                      ), 1000
 			               )
 			           ),
 			           `inventory_location_id` = @locationId,
-			           `created_at` = '".$logCreatedAt->format('Y-m-d H:i:s')."'
+			           `created_at` = '".$itemLocationData['logCreatedAt']->format('Y-m-d H:i:s')."'
 			;";
 			
-			if ($noteText !== '') {
+			if ($itemLocationData['noteText'] !== '') {
 				$itemLocationQueries[] = "
 				    INSERT
 				      INTO `note`
-				       SET `text` = '".str_replace("'", "\'", $noteText)."',
+				       SET `text` = '".str_replace("'", "\'", $itemLocationData['noteText'])."',
 				           `inventory_item_id` = (
 				               SELECT IFNULL(
 				                      (
 				                          SELECT `id`
 				                            FROM `inventory_item`
-				                           WHERE `sku` = '".$itemSku."'
+				                           WHERE `sku` = '".$itemLocationData['itemSku']."'
 				                      ), 1000
 				               )
 				           ),
-				           `created_at` = '".$logCreatedAt->format('Y-m-d H:i:s')."'
+				           `created_at` = '".$itemLocationData['logCreatedAt']->format('Y-m-d H:i:s')."'
 				;";
 			}
 		}
 		
-		$output->writeln('<info>Done. ' . count($itemLocationQueries) . ' SQLs for item locations stored in:</info>');
-		
-		$itemLocationQueryChunks = array_chunk($itemLocationQueries, 25000);
-		foreach ($itemLocationQueryChunks as $index => $itemLocationQueryChunk) {
-			$convertedFileName = 'LendEngineItemLocation_ExtraData_'.time().'_chunk_'.($index+1).'.sql';
-			file_put_contents($dataDirectory.'/'.$convertedFileName, implode(PHP_EOL, $itemLocationQueryChunk));
-			
-			$output->writeln('- '.$convertedFileName);
+		$statisticPerLocation = [];
+		foreach ($statisticsPerSku as $itemSku => $status) {
+			if (isset($statisticPerLocation[$status]) === false) {
+				$statisticPerLocation[$status] = 0;
+			}
+			$statisticPerLocation[$status]++;
 		}
+		
+		foreach ($statisticPerLocation as $location => $count) {
+			$output->writeln('- '.$count."\t".$location);
+		}
+		
+		$convertedFileName = 'LendEngineItemLocation_ExtraData_'.time().'.sql';
+		file_put_contents($dataDirectory.'/'.$convertedFileName, implode(PHP_EOL, $itemLocationQueries));
+		
+		$output->writeln('<info>Done. ' . count($itemLocationQueries) . ' SQLs for item locations stored in ' . $convertedFileName . '</info>');
 		
 		return Command::SUCCESS;
 	}
