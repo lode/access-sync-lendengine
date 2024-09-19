@@ -30,6 +30,7 @@
 			- 'Tijdscheidingsteken': `:`
 			- 'Jaar met vier cijfers': aangevinkt
 			- 'Voorloopnullen in datums': uitgevinkt
+   		- Sla op als 'CSV Exportspecificatie' om toekomstige exports makkelijker te maken
 	- kies 'OK'
 	- kies 'Volgende'
 	- 'Ook veldnamen in de eerste rij': aanvinken
