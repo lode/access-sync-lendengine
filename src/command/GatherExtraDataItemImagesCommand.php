@@ -40,7 +40,7 @@ class GatherExtraDataItemImagesCommand extends Command
 		if ($imagesDirectoryName === '') {
 			throw new \Exception('missing images directory name');
 		}
-		if (file_exists($imagesDirectory) === false) {
+		if ($imagesDirectory === false || file_exists($imagesDirectory) === false) {
 			throw new \Exception('images directory not found');
 		}
 		if (str_starts_with($imagesDirectory, $dataDirectory.'/') === false) {
