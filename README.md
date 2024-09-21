@@ -13,6 +13,7 @@ Sync data from [SpeelotheekSoftware's Access](https://speelotheeksoftware.nl/) t
 
 - Run `./script/setup`
 - Run `./script/server`
+- Run `./script/console composer install`
 
 
 ## Usage
