@@ -123,7 +123,7 @@ class GatherExtraDataItemLocationCommand extends Command
 		
 		$itemLocationQueries = [];
 		foreach ($itemLocations as $locationName) {
-			$locationAction = self::STATUS_MAPPING[$locationName];
+			$locationAction = self::STATUS_MAPPING[$locationName] ?? self::STATUS_TEMPORARY;
 			if ($locationAction === self::STATUS_TEMPORARY) {
 				$locationName = 'Access - '.$locationName;
 			}
@@ -145,7 +145,7 @@ class GatherExtraDataItemLocationCommand extends Command
 		
 		foreach ($itemLocationDataSet as $itemLocationData) {
 			$locationName = $itemLocationData['locationName'];
-			$locationAction = self::STATUS_MAPPING[$locationName];
+			$locationAction = self::STATUS_MAPPING[$locationName] ?? self::STATUS_TEMPORARY;
 			if ($locationAction === self::STATUS_DELETE) {
 				continue;
 			}
