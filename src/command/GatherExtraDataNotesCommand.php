@@ -14,6 +14,7 @@ use Symfony\Component\Console\Attribute\AsCommand;
 use Symfony\Component\Console\Command\Command;
 use Symfony\Component\Console\Input\InputInterface;
 use Symfony\Component\Console\Output\OutputInterface;
+use Symfony\Component\Console\Question\ConfirmationQuestion;
 
 #[AsCommand(name: 'gather-extra-data-notes')]
 class GatherExtraDataNotesCommand extends Command
@@ -113,6 +114,7 @@ class GatherExtraDataNotesCommand extends Command
 		$canonicalArticleMapping = array_flip($canonicalArticleMapping);
 		
 		$contactNoteQueries = [];
+		$failures = [];
 		foreach ($messageCsvLines as $messageCsvLine) {
 			// filter on kinds meant for contacts
 			$messageKindId   = $messageCsvLine[$messageMapping['kind_id']];
@@ -128,6 +130,10 @@ class GatherExtraDataNotesCommand extends Command
 				}
 				
 				$memberId         = $messageCsvLine[$messageMapping['contact_id']];
+				if (isset($memberMembershipNumberMapping[$memberId]) === false) {
+					$failures[] = $messageCsvLine;
+					continue;
+				}
 				$membershipNumber = $memberMembershipNumberMapping[$memberId];
 				
 				$relationQuery = "
@@ -214,6 +220,13 @@ class GatherExtraDataNotesCommand extends Command
 				`admin_only` = 1,
 				`status` = ".$status."
 			;";
+		}
+		
+		if ($failures !== []) {
+			$output->writeln('<comment>'.count($failures).' failures</comment>');
+			if ($this->getHelper('question')->ask($input, $output, new ConfirmationQuestion('<question>Debug? [y/N]</question> ', false)) === true) {
+				print_r($failures);
+			}
 		}
 		
 		$convertedFileName = 'LendEngineNotes_ExtraData_'.time().'.sql';
