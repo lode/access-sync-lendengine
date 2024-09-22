@@ -26,6 +26,7 @@ Sync data from [SpeelotheekSoftware's Access](https://speelotheeksoftware.nl/) t
 	- ArtikelStatusLogging
 	- ArtikelType
 	- ArtikelUitleenDuur
+	- KasboekType
 	- Lid
 	- LidStatus
 	- LidType
@@ -36,6 +37,9 @@ Sync data from [SpeelotheekSoftware's Access](https://speelotheeksoftware.nl/) t
 	- Onderdeel
 	- Plaats
 	- Straat
+	- Tarief
+	- TariefEenheid
+	- TariefPeriode
 	- Verantwoordelijke
 - [Export website CSVs](/docs/Export%20website%20CSVs.md) (alternative if previous export doesn't work)
 	- Artikelen_\<csvTimestamp>
