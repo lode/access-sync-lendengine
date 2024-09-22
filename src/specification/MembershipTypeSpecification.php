@@ -4,7 +4,7 @@ declare(strict_types=1);
 
 namespace Lode\AccessSyncLendEngine\specification;
 
-class MemberTypeSpecification {
+class MembershipTypeSpecification {
 	/**
 	 * @return string[]
 	 */
