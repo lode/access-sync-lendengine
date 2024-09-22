@@ -236,6 +236,17 @@ class GatherExtraDataMembershipsCommand extends Command
 			;";
 		}
 		
+		$membershipQueries[] = "
+		    UPDATE `contact` SET
+		    `active_membership` = (
+		        SELECT `id` FROM `membership`
+		        WHERE `contact_id` = `contact`.`id`
+		        AND `status` = 'ACTIVE'
+		        ORDER BY `id` DESC
+		        LIMIT 1
+		    )
+		;";
+		
 		$allQueries = [...$membershipTypeQueries, ...$membershipQueries];
 		$convertedFileName = 'LendEngineMemberships_ExtraData_'.time().'.sql';
 		file_put_contents($dataDirectory.'/'.$convertedFileName, implode(PHP_EOL, $allQueries));
