@@ -7,7 +7,7 @@ namespace Lode\AccessSyncLendEngine\command;
 use Lode\AccessSyncLendEngine\service\ConvertCsvService;
 use Lode\AccessSyncLendEngine\specification\MemberSpecification;
 use Lode\AccessSyncLendEngine\specification\MemberStatusSpecification;
-use Lode\AccessSyncLendEngine\specification\MemberTypeSpecification;
+use Lode\AccessSyncLendEngine\specification\MembershipTypeSpecification;
 use Lode\AccessSyncLendEngine\specification\ResponsibleSpecification;
 use Symfony\Component\Console\Attribute\AsCommand;
 use Symfony\Component\Console\Command\Command;
@@ -68,8 +68,8 @@ class InsightCommand extends Command
 		$memberStatusCsvLines = $service->getExportCsv($dataDirectory.'/LidStatus.csv', (new MemberStatusSpecification())->getExpectedHeaders());
 		$output->writeln('Imported ' . count($memberStatusCsvLines) . ' member statuses');
 		
-		$memberTypeCsvLines = $service->getExportCsv($dataDirectory.'/LidType.csv', (new MemberTypeSpecification())->getExpectedHeaders());
-		$output->writeln('Imported ' . count($memberTypeCsvLines) . ' member types');
+		$membershipTypeCsvLines = $service->getExportCsv($dataDirectory.'/LidType.csv', (new MembershipTypeSpecification())->getExpectedHeaders());
+		$output->writeln('Imported ' . count($membershipTypeCsvLines) . ' membership types');
 		
 		$output->writeln('<info>Checking contacts ...</info>');
 		
@@ -78,9 +78,9 @@ class InsightCommand extends Command
 			$memberStatusMapping[$memberStatusCsvLine['lis_id']] = $memberStatusCsvLine['lis_oms'];
 		}
 		
-		$memberTypeMapping = [];
-		foreach ($memberTypeCsvLines as $memberTypeCsvLine) {
-			$memberTypeMapping[$memberTypeCsvLine['lit_id']] = $memberTypeCsvLine['lit_oms'];
+		$membershipTypeMapping = [];
+		foreach ($membershipTypeCsvLines as $memberTypeCsvLine) {
+			$membershipTypeMapping[$memberTypeCsvLine['lit_id']] = $memberTypeCsvLine['lit_oms'];
 		}
 		
 		$responsibleMappingById = [];
@@ -115,7 +115,7 @@ class InsightCommand extends Command
 					$memberMapped[$mappedKey] = $memberStatusMapping[$memberMapped[$mappedKey]];
 				}
 				if ($csvKey === 'lid_lit_id') {
-					$memberMapped[$mappedKey] = $memberTypeMapping[$memberMapped[$mappedKey]];
+					$memberMapped[$mappedKey] = $membershipTypeMapping[$memberMapped[$mappedKey]];
 				}
 			}
 			

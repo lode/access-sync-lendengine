@@ -13,6 +13,7 @@ Sync data from [SpeelotheekSoftware's Access](https://speelotheeksoftware.nl/) t
 
 - Run `./script/setup`
 - Run `./script/server`
+- Run `./script/console composer install`
 
 
 ## Usage
@@ -25,6 +26,7 @@ Sync data from [SpeelotheekSoftware's Access](https://speelotheeksoftware.nl/) t
 	- ArtikelStatusLogging
 	- ArtikelType
 	- ArtikelUitleenDuur
+	- KasboekType
 	- Lid
 	- LidStatus
 	- LidType
@@ -35,6 +37,9 @@ Sync data from [SpeelotheekSoftware's Access](https://speelotheeksoftware.nl/) t
 	- Onderdeel
 	- Plaats
 	- Straat
+	- Tarief
+	- TariefEenheid
+	- TariefPeriode
 	- Verantwoordelijke
 - [Export website CSVs](/docs/Export%20website%20CSVs.md) (alternative if previous export doesn't work)
 	- Artikelen_\<csvTimestamp>
@@ -43,11 +48,7 @@ Sync data from [SpeelotheekSoftware's Access](https://speelotheeksoftware.nl/) t
 - Place all exported files in `data/`.
 - Copy article photos in `data/photos/`, using their code as file name, e.g. `B42.jpg`.
 
-### 2. Configure Lend Engine
-
-- Create a membership type (Admin » Settings » Membership types » Add a membership type) to migrating existing memberships. Lookup its id in the edit url.
-
-### 3. Run scripts
+### 2. Run scripts
 
 Run each command with `./script/console ./script/command <commandName> <optionalExtraArguments>`.
 
@@ -63,7 +64,7 @@ Each script migrates a part of the data, you can choose which to run and do a ma
 | Items alternative | `convert-website-csvs [csvTimestamp]` | Item basics, alternative method with webcatalogus CSVs. |
 | Parts | `gather-extra-data-item-parts` | Count, description. |
 | Images | `gather-extra-data-item-images photos` | Item images (SQL and converted image files). |
-| Memberships | `gather-extra-data-memberships [membershipId] [membershipPrice]` | Contact <> Subscription, period.<br>Use the id and price from the membership type created in step 2.<br>If you have multiple different memberships run this script multiple times with each subset of the export and different membership types. |
+| Memberships | `gather-extra-data-memberships` | Contact <> Subscription, period. |
 | Item status | `gather-extra-data-item-location` | Locations ("status") for items. |
 | Notes | `gather-extra-data-notes` | Messages ("meldingen") for contacts and items. |
 | Contact notes | `gather-extra-data-contact-notes` | Specifics ("bijzonderheden") for contacts. |
@@ -73,7 +74,7 @@ Each script migrates a part of the data, you can choose which to run and do a ma
 
 Output files `LendEngine*.csv` & `LendEngine*.sql` will be added in `data/`.
 
-### 4. Import CSVs in Lend Engine admin
+### 3. Import CSVs in Lend Engine admin
 
 The CSVs from the above scripts (`LendEngine*.csv` for items & contacts) can be imported via Lend Engine's CSV import admin.
 
@@ -84,7 +85,7 @@ The CSVs from the above scripts (`LendEngine*.csv` for items & contacts) can be 
 - Import contacts (Admin » Settings » Import contacts)
 	- Copy the contents of `LendEngineContacts_[timestamp].csv` (the output of the `convert-contacts` command).
 
-### 5. Import SQLs via Lend Engine support
+### 4. Import SQLs via Lend Engine support
 
 The SQLs from the above scripts (`LendEngine*.sql`) can't be imported via Lend Engine admin.
 
@@ -93,9 +94,13 @@ You can upload to WeTransfer and contact Lend Engine support (support@lend-engin
 
 Wait until this is done before changing things in Lend Engine yourself to prevent conflicts.
 
-### 6. Cleanup
+### 5. Cleanup
 
 Don't forget to delete the exported files locally as they contain sensitive user data.
+
+### 6. Configure Lend Engine
+
+- Rename migrated membership types (Admin » Settings » Membership types) to something that makes more sense. Delete the ones not used.
 
 
 ## Manual migration

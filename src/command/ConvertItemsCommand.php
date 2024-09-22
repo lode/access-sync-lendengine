@@ -131,7 +131,13 @@ class ConvertItemsCommand extends Command
 			 */
 			
 			// collect relations
-			$itemConverted['Category'] = $articleTypeMapping[$itemConverted['Category']];
+			if (isset($articleTypeMapping[$itemConverted['Category']]) === false) {
+				// access allowed to delete categories without disconnecting the category id from the item
+				$itemConverted['Category'] = 'Category #'.$itemConverted['Category'];
+			}
+			else {
+				$itemConverted['Category'] = $articleTypeMapping[$itemConverted['Category']];
+			}
 			$itemConverted['Brand']    = $brandMapping[$itemConverted['Brand']];
 			
 			// convert amount
