@@ -217,6 +217,8 @@ class GatherExtraDataMembershipsCommand extends Command
 				$expiresAt->modify('+1 year');
 			}
 			
+			$status = ($expiresAt < new \DateTime()) ? 'EXPIRED' : 'ACTIVE';
+			
 			$membershipQueries[] = "
 				INSERT INTO `membership` SET
 				`subscription_id` = @membershipType".$membershipTypeId.",
@@ -230,7 +232,7 @@ class GatherExtraDataMembershipsCommand extends Command
 				`created_at` = '".$startsAt->format('Y-m-d H:i:s')."',
 				`starts_at` = '".$startsAt->format('Y-m-d H:i:s')."',
 				`expires_at` = '".$expiresAt->format('Y-m-d H:i:s')."',
-				`status` = 'ACTIVE'
+				`status` = '".$status."'
 			;";
 		}
 		
