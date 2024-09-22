@@ -18,9 +18,10 @@ use Symfony\Component\Console\Output\OutputInterface;
 #[AsCommand(name: 'gather-extra-data-item-location')]
 class GatherExtraDataItemLocationCommand extends Command
 {
-	private const STATUS_DELETE = -1;
+	private const STATUS_DELETE    = -1;
 	private const STATUS_TEMPORARY = 0;
-	private const STATUS_MAPPING = [
+	private const STATUS_AVAILABLE = 'Gereed voor uitlenen';
+	private const STATUS_MAPPING   = [
 		'Afgekeurd (Tijdelijk)'  => 'Repair',
 		'Afgekeurd-Definitief'   => self::STATUS_DELETE,
 		'Gereed voor uitlenen'   => 'In stock',
@@ -125,13 +126,13 @@ class GatherExtraDataItemLocationCommand extends Command
 		foreach ($itemLocations as $locationName) {
 			$locationAction = self::STATUS_MAPPING[$locationName] ?? self::STATUS_TEMPORARY;
 			if ($locationAction === self::STATUS_TEMPORARY) {
-				$locationName = 'Access - '.$locationName;
+				$locationName = substr('Access - '.$locationName, 0, 32);
 			}
 			else { // delete & already existing
 				continue;
 			}
 			
-			$isAvailable = ($locationName === 'Gereed voor uitlenen') ? '1' : '0';
+			$isAvailable = ($locationName === self::STATUS_AVAILABLE) ? '1' : '0';
 			
 			$itemLocationQueries[] = "
 			    INSERT
@@ -150,7 +151,7 @@ class GatherExtraDataItemLocationCommand extends Command
 				continue;
 			}
 			elseif ($locationAction === self::STATUS_TEMPORARY) {
-				$locationName = 'Access - '.$locationName;
+				$locationName = substr('Access - '.$locationName, 0, 32);
 			}
 			else {
 				$locationName = $locationAction;
