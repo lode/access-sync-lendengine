@@ -1,7 +1,8 @@
 # Export Access tables
 
 - open database met shift-toets ingedrukt
-- klik links bovenin op het pijltje naast 'Formulieren'
+- klik links bovenin op het '>' om de scheidingsbalk te openen van het 'Navigatiedeelvenster'
+- klik op de uitgevouwen balk rechts bovenin op het pijltje naast '<'
 - kies voor 'Tabellen'
 - scroll naar `Verantwoordelijke` (of een andere tabel), selecteer
 - klik bovenin de ribbon op 'Externe gegevens'
