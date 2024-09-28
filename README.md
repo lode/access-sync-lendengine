@@ -2,6 +2,9 @@
 
 Sync data from [SpeelotheekSoftware's Access](https://speelotheeksoftware.nl/) to [Lend Engine](https://www.lend-engine.com/).
 
+There is also a [document on how to setup Lend Engine for toy libraries](https://docs.google.com/document/d/1hRl2P_GZhFMwi5PnTcKprZJZ9NPpgkrJyAQ-OSP50BY/edit?usp=sharing).
+This discusses migrating data and making the correct settings.
+
 
 ## Install
 
