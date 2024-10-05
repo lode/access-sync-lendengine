@@ -28,6 +28,7 @@ class GatherExtraDataItemImagesCommand extends Command
 		$imagesDirectoryName = $input->getArgument('imagesDirectoryName');
 		$imagesDirectory     = realpath($dataDirectory.'/'.$imagesDirectoryName);
 		$exportDirectory     = $dataDirectory.'/export_'.time();
+		$supportedExtensions = ['jpg', 'jpeg'];
 		
 		$service->requireInputCsvs(
 			$dataDirectory,
@@ -65,6 +66,37 @@ class GatherExtraDataItemImagesCommand extends Command
 		mkdir($exportDirectory.'/thumbs/', recursive: true);
 		mkdir($exportDirectory.'/large/', recursive: true);
 		
+		$imagePaths = glob($imagesDirectory.'/*');
+		$imagePathMapping = [];
+		foreach ($imagePaths as $imagePath) {
+			$fileName = basename($imagePath);
+			
+			if (str_contains($fileName, '.') === false) {
+				$output->writeln('<comment>Found images without extension '.$fileName.', skipping</comment>');
+				continue;
+			}
+			
+			$articleSku          = substr($fileName, 0, strrpos($fileName, '.'));
+			$sanitizedArticleSku = strtolower($articleSku);
+			
+			if (isset($imagePathMapping[$sanitizedArticleSku]) === true) {
+				$existingImageExtension = substr($imagePathMapping[$sanitizedArticleSku], strrpos($imagePathMapping[$sanitizedArticleSku], '.') + 1);
+				$newImageExtension      = substr($fileName, strrpos($fileName, '.') + 1);
+				
+				$existingImageSupported = (in_array($existingImageExtension, $supportedExtensions, strict: true));
+				$newImageSupported      = (in_array($newImageExtension, $supportedExtensions, strict: true));
+				$preferedImagePath      = ($existingImageSupported === false && $newImageSupported === true) ? $imagePath : $imagePathMapping[$sanitizedArticleSku];
+				
+				$output->writeln('<comment>Found multiple images for '.$articleSku.', picked '.$preferedImagePath.'</comment>');
+				
+				if ($preferedImagePath === $imagePathMapping[$sanitizedArticleSku]) {
+					continue;
+				}
+			}
+			
+			$imagePathMapping[$sanitizedArticleSku] = $imagePath;
+		}
+		
 		$progressBar = new ProgressBar($output, count($knownArticleSKUs));
 		$progressBar->setFormat('debug');
 		$progressBar->start();
@@ -73,19 +105,17 @@ class GatherExtraDataItemImagesCommand extends Command
 		foreach ($knownArticleSKUs as $articleSku => $null) {
 			$progressBar->advance();
 			
-			$imagePaths = glob($imagesDirectory.'/'.$articleSku.'.*');
-			if ($imagePaths === []) {
+			$sanitizedArticleSku = strtolower($articleSku);
+			if (isset($imagePathMapping[$sanitizedArticleSku]) === false) {
+				$output->writeln('<comment>No image found for '.$articleSku.', skipping</comment>');
 				continue;
 			}
 			
-			$imagePath = reset($imagePaths);
-			if (count($imagePaths) > 1) {
-				$output->writeln('<comment>Found multiple images for '.$articleSku.', picked '.basename($imagePath).'</comment>');
-			}
+			$imagePath = $imagePathMapping[$sanitizedArticleSku];
 			
 			// @todo support different extensions
 			$fileExtension = strtolower(substr($imagePath, strrpos($imagePath, '.') + 1));
-			if ($fileExtension !== 'jpg' && $fileExtension !== 'jpeg') {
+			if (in_array($fileExtension, $supportedExtensions, strict: true) === false) {
 				$output->writeln('<comment>Found non-jpg image for '.$articleSku.', skipping</comment>');
 				continue;
 			}
