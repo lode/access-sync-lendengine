@@ -28,6 +28,7 @@ class GatherExtraDataItemImagesCommand extends Command
 		$imagesDirectoryName = $input->getArgument('imagesDirectoryName');
 		$imagesDirectory     = realpath($dataDirectory.'/'.$imagesDirectoryName);
 		$exportDirectory     = $dataDirectory.'/export_'.time();
+		$supportedExtensions = ['jpg', 'jpeg'];
 		
 		$service->requireInputCsvs(
 			$dataDirectory,
@@ -79,8 +80,18 @@ class GatherExtraDataItemImagesCommand extends Command
 			$sanitizedArticleSku = strtolower($articleSku);
 			
 			if (isset($imagePathMapping[$sanitizedArticleSku]) === true) {
-				$output->writeln('<comment>Found multiple images for '.$articleSku.', picked '.$imagePathMapping[$sanitizedArticleSku].'</comment>');
-				continue;
+				$existingImageExtension = substr($imagePathMapping[$sanitizedArticleSku], strrpos($imagePathMapping[$sanitizedArticleSku], '.') + 1);
+				$newImageExtension      = substr($fileName, strrpos($fileName, '.') + 1);
+				
+				$existingImageSupported = (in_array($existingImageExtension, $supportedExtensions, strict: true));
+				$newImageSupported      = (in_array($newImageExtension, $supportedExtensions, strict: true));
+				$preferedImagePath      = ($existingImageSupported === false && $newImageSupported === true) ? $imagePath : $imagePathMapping[$sanitizedArticleSku];
+				
+				$output->writeln('<comment>Found multiple images for '.$articleSku.', picked '.$preferedImagePath.'</comment>');
+				
+				if ($preferedImagePath === $imagePathMapping[$sanitizedArticleSku]) {
+					continue;
+				}
 			}
 			
 			$imagePathMapping[$sanitizedArticleSku] = $imagePath;
@@ -104,7 +115,7 @@ class GatherExtraDataItemImagesCommand extends Command
 			
 			// @todo support different extensions
 			$fileExtension = strtolower(substr($imagePath, strrpos($imagePath, '.') + 1));
-			if ($fileExtension !== 'jpg' && $fileExtension !== 'jpeg') {
+			if (in_array($fileExtension, $supportedExtensions, strict: true) === false) {
 				$output->writeln('<comment>Found non-jpg image for '.$articleSku.', skipping</comment>');
 				continue;
 			}
