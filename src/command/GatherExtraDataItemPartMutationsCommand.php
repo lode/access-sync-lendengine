@@ -17,6 +17,10 @@ use Symfony\Component\Console\Question\ConfirmationQuestion;
 #[AsCommand(name: 'gather-extra-data-item-part-mutations')]
 class GatherExtraDataItemPartMutationsCommand extends Command
 {
+	private const string TYPE_MISSING_OR_BROKEN = 'missing_or_broken';
+	private const string TYPE_FOUND_OR_REPAIRED = 'found_or_repaired';
+	private const string TYPE_PERMANENTLY_GONE  = 'permanently_gone';
+	
 	private const string DEFAULT_EXPLANATION_MISSING = 'kwijt';
 	private const string DEFAULT_EXPLANATION_BROKEN  = 'Kapot, nl:';
 	
@@ -61,8 +65,11 @@ class GatherExtraDataItemPartMutationsCommand extends Command
 		$articleCsvLines = $service->getExportCsv($dataDirectory.'/Artikel.csv', (new ArticleSpecification())->getExpectedHeaders());
 		$output->writeln('Imported ' . count($articleCsvLines). ' artikelen');
 		
-		$output->writeln('<info>Exporting part mutations ...</info>');
+		// @todo map part original count for calculating permanently gone types
+		// @todo map part descriptions for filling notes
+		// @todo map item ids for query where statements
 		
+		/*
 		$canonicalArticleMapping = [];
 		foreach ($articleCsvLines as $articleCsvLine) {
 			$articleId  = $articleCsvLine['art_id'];
@@ -72,7 +79,6 @@ class GatherExtraDataItemPartMutationsCommand extends Command
 		}
 		$canonicalArticleMapping = array_flip($canonicalArticleMapping);
 		
-		/*
 		$partToArticleMapping = [];
 		foreach ($partCsvLines as $partCsvLine) {
 			$partId    = $partCsvLine[$partMapping['part_id']];
@@ -99,202 +105,237 @@ class GatherExtraDataItemPartMutationsCommand extends Command
 		}
 		*/
 		
-		$partsWithMutations = [];
-		foreach ($partMutationCsvLines as $index => $partMutationCsvLine) {
-			$output->writeln('<error>'.$index.'</error>');
-			dump($partMutationCsvLine);
-			
-			$partId               = $partMutationCsvLine[$partMutationMapping['part_id']]; // 'onm_ond_id',
-			$partCount            = $partMutationCsvLine[$partMutationMapping['part_count']]; // 'onm_definitiefdatum',
-			$mutationMemberId     = $partMutationCsvLine[$partMutationMapping['mutation_member_id']]; // 'onm_lid_id',
+		$output->writeln('<info>Validating part mutations input format ...</info>');
+		
+		foreach ($partMutationCsvLines as $partMutationCsvLine) {
 			$mutationExplanations = array_intersect_key($partMutationCsvLine, array_flip($partMutationMapping['mutation_explanation'])); // ['onm_kapot', 'onm_oms', 'onm_corr_oms'],
 			$mutationCounts       = array_intersect_key($partMutationCsvLine, array_flip($partMutationMapping['mutation_count'])); // ['onm_aantal', 'onm_corr_aantal'],
-			$noteCreated          = $partMutationCsvLine[$partMutationMapping['note_created']]; // 'onm_datum',
-			$noteContactId        = $partMutationCsvLine[$partMutationMapping['note_contact_id']]; // 'onm_mdw_id',
-			$noteText             = '';
 			
-			dump([
-				'$partId'               => $partId,
-				'$partCount'            => $partCount,
-				'$mutationMemberId'     => $mutationMemberId,
-				'$mutationExplanations' => $mutationExplanations,
-				'$mutationCounts'       => $mutationCounts,
-				'$noteCreated'          => $noteCreated,
-				'$noteContactId'        => $noteContactId,
-				'$noteText'             => $noteText,
-			]);
-			
-			if (isset($partsWithMutations[$partId]) === false) {
-				$partsWithMutations[$partId] = [
-					#'originalCount'       => $partToArticleMapping[$partId]['part_count'],
-					'originalMutation'    => 0,
-					'mutationCount'       => 0,
-					'mutationExplanation' => [],
-				];
+			if ($mutationCounts['onm_aantal'] !== '-1') {
+				$output->writeln('<info>value: '.json_encode($mutationCounts['onm_aantal']).'</info>');
+				$output->writeln('<info>csv: '.json_encode($partMutationCsvLine).'</info>');
+				throw new \Exception('unsupported (yet) mutation count');
 			}
-			
-			// missing/broken and returned/repaired
-			if (array_sum(array_filter($mutationCounts)) === 0) {
-				dump('missing/broken and returned/repaired', $mutationCounts, array_sum(array_filter($mutationCounts)));
-				// @todo maybe add historic notes
-				continue;
+			if (in_array($mutationCounts['onm_corr_aantal'], ['1', '0', ''], strict: true) === false) {
+				$output->writeln('<info>value: '.json_encode($mutationCounts['onm_corr_aantal']).'</info>');
+				$output->writeln('<info>csv: '.json_encode($partMutationCsvLine).'</info>');
+				throw new \Exception('unsupported (yet) mutation correction count');
 			}
-			
-			// permanently missing/broken
-			elseif ($partCount !== '') {
-				dump('permanently missing/broken', $partCount, $mutationCounts, array_sum(array_filter($mutationCounts)));
-				$partsWithMutations[$partId]['originalMutation'] += array_sum(array_filter($mutationCounts));
-				
-				// @todo maybe add historic notes
-				#continue;
+			if (in_array($mutationExplanations['onm_kapot'], ['1', '0'], strict: true) === false) {
+				$output->writeln('<info>value: '.json_encode($mutationExplanations['onm_kapot']).'</info>');
+				$output->writeln('<info>csv: '.json_encode($partMutationCsvLine).'</info>');
+				throw new \Exception('unsupported (yet) mutation broken toggle');
 			}
+		}
+		
+		$output->writeln('<info>Determining part mutations type ...</info>');
+		
+		$typeCounts = [
+			self::TYPE_MISSING_OR_BROKEN => 0,
+			self::TYPE_FOUND_OR_REPAIRED => 0,
+			self::TYPE_PERMANENTLY_GONE  => 0,
+		];
+		$parsedMutations = [];
+		foreach ($partMutationCsvLines as $partMutationCsvLine) {
+			$mutationExplanations = array_intersect_key($partMutationCsvLine, array_flip($partMutationMapping['mutation_explanation'])); // ['onm_kapot', 'onm_oms', 'onm_corr_oms'],
+			$mutationCounts       = array_intersect_key($partMutationCsvLine, array_flip($partMutationMapping['mutation_count'])); // ['onm_aantal', 'onm_corr_aantal'],
 			
-			// broken
-			elseif ($mutationExplanations['onm_kapot'] === '1') {
-				$mutationCount = abs(array_sum(array_filter($mutationCounts)));
-				$partsWithMutations[$partId]['mutationCount'] += $mutationCount;
-				$newMutationExplanation = $mutationExplanations['onm_oms'];
-				$newMutationExplanation = str_replace(self::DEFAULT_EXPLANATION_BROKEN, '', $newMutationExplanation);
-				$newMutationExplanation = trim($newMutationExplanation);
-				if (strlen($newMutationExplanation) <= 1) {
-					$newMutationExplanation = '';
-				}
-				if ($newMutationExplanation === '') {
-					$newMutationExplanation = 'kapot';
-				}
-				dump('broken', $mutationCounts, $mutationCount, $mutationExplanations['onm_oms'], $newMutationExplanation);
-				if ($newMutationExplanation !== '') {
-					$partsWithMutations[$partId]['mutationExplanation'] = [
-						...$partsWithMutations[$partId]['mutationExplanation'],
-						['count' => $mutationCount, 'explanation' => $newMutationExplanation],
-					];
-				}
+			if ($partMutationCsvLine[$partMutationMapping['part_count']] !== '') {
+				$type = self::TYPE_PERMANENTLY_GONE;
 			}
-			
-			// missing
+			elseif ($mutationCounts['onm_corr_aantal'] !== '') {
+				$type = self::TYPE_FOUND_OR_REPAIRED;
+			}
 			else {
-				$mutationCount = abs(array_sum(array_filter($mutationCounts)));
-				$partsWithMutations[$partId]['mutationCount'] += $mutationCount;
-				$newMutationExplanation = $mutationExplanations['onm_oms'];
-				$newMutationExplanation = str_replace(self::DEFAULT_EXPLANATION_MISSING, '', $newMutationExplanation);
-				$newMutationExplanation = trim($newMutationExplanation);
-				$newMutationExplanation = trim($newMutationExplanation, '.');
-				if (strlen($newMutationExplanation) <= 1) {
-					$newMutationExplanation = '';
-				}
-				dump('missing', $mutationCounts, $mutationCount, $mutationExplanations['onm_oms'], $newMutationExplanation);
-				if ($newMutationExplanation !== '') {
-					$partsWithMutations[$partId]['mutationExplanation'] = [
-						...$partsWithMutations[$partId]['mutationExplanation'],
-						['count' => $mutationCount, 'explanation' => $newMutationExplanation],
-					];
-				}
+				$type = self::TYPE_MISSING_OR_BROKEN;
 			}
 			
-			dump($partsWithMutations[$partId], $noteText);
-			
-			#if ($this->getHelper('question')->ask($input, $output, new ConfirmationQuestion('<question>Next? [Y/n]</question> ', true)) === false) {
-			#	break;
-			#}
-			
-			if ($noteText !== '') {
-				$notes[] = [
-					'createdAt' => $noteCreated,
-					'createdBy' => $noteContactId,
-					'contact'   => $mutationMemberId,
-					'item'      => $itemSku,
-					'text'      => $noteText,
-				];
-			}
+			$typeCounts[$type]++;
+			$parsedMutations[] = [
+				'type'    => $type,
+				'csvLine' => $partMutationCsvLine,
+			];
 		}
 		
-		$partsWithMutations = array_map(function(array $mutationInformation) {
-			if ($mutationInformation['mutationExplanation'] === []) {
-				unset($mutationInformation['mutationExplanation']);
-				unset($mutationInformation['mutationCount']);
-				unset($mutationInformation['originalMutation']);
-			}
-			#elseif ($mutationInformation['mutationCount'] <= 1) {
-			#	unset($mutationInformation['mutationCount']);
-			#}
+		foreach ($typeCounts as $type => $count) {
+			$output->writeln('- '.$type.': '.$count);
+		}
+		
+		$output->writeln('<info>Gathering part mutations data ...</info>');
+		
+		$partsWithMutations = [];
+		foreach ($parsedMutations as ['type' => $type, 'csvLine' => $partMutationCsvLine]) {
+			dd($type, $partMutationCsvLine);
 			
-			if (isset($mutationInformation['mutationExplanation'])) {
-				$summary = [];
-				$countWithExplanation = 0;
-				foreach ($mutationInformation['mutationExplanation'] as $mutationExplanationInformation) {
-					if (isset($summary[$mutationExplanationInformation['explanation']]) === false) {
-						$summary[$mutationExplanationInformation['explanation']] = 0;
+			$partId               = $partMutationCsvLine[$partMutationMapping['part_id']];
+			$mutationExplanations = array_intersect_key($partMutationCsvLine, array_flip($partMutationMapping['mutation_explanation'])); // ['onm_kapot', 'onm_oms', 'onm_corr_oms'],
+			$mutationCounts       = array_intersect_key($partMutationCsvLine, array_flip($partMutationMapping['mutation_count'])); // ['onm_aantal', 'onm_corr_aantal'],
+			
+			$partMutation = [
+				'type' => $type,
+			];
+			
+			switch ($type) {
+				case self::TYPE_MISSING_OR_BROKEN:
+					$partMutation['mutationCount'] = 1;
+					$mutationExplanation = $this->getCleanMutationExplanation($type, $mutationExplanations);
+					if ($mutationExplanation !== null) {
+						$partMutation['mutationExplanation'] = $mutationExplanation;
 					}
+					break;
+				
+				case self::TYPE_FOUND_OR_REPAIRED:
+					// nothing needed for mutations, maybe process for notes
+					break;
+				
+				case self::TYPE_PERMANENTLY_GONE:
+					$partMutation['count'] = -1;
+					break;
+				
+				default:
+					throw new \Exception('missing implementation for determined type '.$type);
+			}
+			
+			$partsWithMutations[$partId][] = $partMutation;
+		}
+		
+		$output->writeln('<info>Combine part mutations ...</info>');
+		
+		$partsWithMutationRecords = [];
+		foreach ($partsWithMutations as $partId => $partMutations) {
+			$partMutationRecord = [
+				'count'               => 0,
+				'mutationCount'       => 0,
+				'mutationExplanation' => null,
+			];
+			
+			foreach ($partMutations as $partMutation) {
+				if (isset($partMutation['count']) === true) {
+					$partMutationRecord['count'] += $partMutation['count'];
+				}
+				if (isset($partMutation['mutationCount']) === true) {
+					$partMutationRecord['mutationCount'] += $partMutation['mutationCount'];
+				}
+				if (isset($partMutation['mutationExplanation']) === true) {
+					// @todo
+					// - if the same, increase the count
+					// - if different, add each with count 1
 					
-					$summary[$mutationExplanationInformation['explanation']] += $mutationExplanationInformation['count'];
-					$countWithExplanation += $mutationExplanationInformation['count'];
+					$partMutationRecord['mutationExplanation'] = $partMutation['mutationExplanation'];
+					
+					/*
+					if (isset($mutationInformation['mutationExplanation'])) {
+						$summary = [];
+						$countWithExplanation = 0;
+						foreach ($mutationInformation['mutationExplanation'] as $mutationExplanationInformation) {
+							if (isset($summary[$mutationExplanationInformation['explanation']]) === false) {
+								$summary[$mutationExplanationInformation['explanation']] = 0;
+							}
+							
+							$summary[$mutationExplanationInformation['explanation']] += $mutationExplanationInformation['count'];
+							$countWithExplanation += $mutationExplanationInformation['count'];
+						}
+						
+						$finalExplanation = [];
+						foreach ($summary as $explanation => $count) {
+							$finalExplanation[] = (str_contains($explanation, (string) $count)) ? $explanation : $count.' '.$explanation;
+						}
+						
+						if ($countWithExplanation < $mutationInformation['mutationCount']) {
+							$countMissing = ($mutationInformation['mutationCount'] - $countWithExplanation);
+							$finalExplanation[] = ($countMissing > 1) ? $countMissing.' missen' : $countMissing.' mist';
+						}
+						
+						$mutationInformation['mutationExplanation'] = implode('; ', $finalExplanation);
+					}
+					*/
 				}
-				
-				$finalExplanation = [];
-				foreach ($summary as $explanation => $count) {
-					$finalExplanation[] = (str_contains($explanation, (string) $count)) ? $explanation : $count.' '.$explanation;
-				}
-				
-				if ($countWithExplanation < $mutationInformation['mutationCount']) {
-					$countMissing = ($mutationInformation['mutationCount'] - $countWithExplanation);
-					$finalExplanation[] = ($countMissing > 1) ? $countMissing.' missen' : $countMissing.' mist';
-				}
-				
-				$mutationInformation['mutationExplanation'] = implode('; ', $finalExplanation);
 			}
 			
-			return $mutationInformation;
-		}, $partsWithMutations);
+			$partsWithMutationRecords[$partId] = $partMutationRecord;
+		}
 		
-		$partsWithMutations = array_filter($partsWithMutations, function(array $mutationInformation) {
-			if (isset($mutationInformation['originalMutation']) && $mutationInformation['originalMutation'] !== 0) {
-				return true;
-			}
-			if (isset($mutationInformation['mutationCount']) && $mutationInformation['mutationCount'] !== 0) {
-				return true;
-			}
-			return false;
-		});
+		$output->writeln('<info>Sort part mutations for efficient queries ...</info>');
 		
-		$convertedFileName = 'LendEngineItemPartMutations_ExtraData_'.time().'.json';
-		file_put_contents($dataDirectory.'/'.$convertedFileName, json_encode($partsWithMutations));
+		// @todo sort parts per item
 		
-		dd('end');
+		$output->writeln('<info>Exporting part mutations ...</info>');
 		
-		$itemPartMutationQueries = [];
-		foreach ($partsWithMutations as $partId => $partWithMutations) {
-			$whereStatementInfo = $partToArticleMapping[$partId];
-			
-			$itemPartMutationQueries[] = "
-				UPDATE `item_part`
-				SET
-				`count` = $count,
-				`mutation_count` = ".($hasMutation ? $mutationCount : "NULL").",
-				`mutation_explanation` = ".($hasMutation ? "'".$mutationExplanation."'" : "NULL")."
-				WHERE
-				`item_id` = (
-					SELECT IFNULL(
-						(
-							SELECT `id`
-							FROM `inventory_item`
-							WHERE `sku` = '".$itemSku."'
-						), 1000
-					)
-				),
-				AND `description` = '".str_replace("'", "\'", $description)."'
+		$partMutationQueries = [];
+		foreach ($partsWithMutationRecords as $partId => $partMutationRecord) {
+			// @todo determine when to switch item id
+			$partMutationQueries[] = "
+			    SELECT `id`
+			    FROM `inventory_item`
+			    WHERE `sku` = '".$itemSku."'
 			;";
-		}
-		
-		$output->writeln('<info>Done. ' . count($itemPartMutationQueries) . ' SQLs for part mutations stored in:</info>');
-		
-		$itemPartMutationQueryChunks = array_chunk($itemPartMutationQueries, 2500);
-		foreach ($itemPartMutationQueryChunks as $index => $itemPartMutationQueryChunk) {
-			$convertedFileName = 'LendEngineItemPartMutations_ExtraData_'.time().'_chunk_'.($index+1).'.sql';
-			file_put_contents($dataDirectory.'/'.$convertedFileName, implode(PHP_EOL, $itemPartMutationQueryChunk));
 			
-			$output->writeln('- '.$convertedFileName);
+			if ($partMutationRecord['mutationCount'] !== 0) {
+				$count               = $partMutationRecord['count'];
+				$mutationCount       = $partMutationRecord['mutationCount'];
+				$mutationExplanation = $partMutationRecord['mutationExplanation'];
+				
+				$partMutationQueries[] = "UPDATE `item_part` SET
+				    `count` = `count` + {$count},
+				    `mutationCount` = `mutationCount` + {$mutationCount},
+				    `mutationExplanation` = '".str_replace("'", "\'", $mutationExplanation)."'
+				    WHERE `inventory_item_id` = @itemId
+				;";
+			}
+			elseif ($partMutationRecord['count'] !== 0) {
+				$count = $partMutationRecord['count'];
+				
+				$partMutationQueries[] = "UPDATE `item_part` SET
+				    `count` = `count` + {$count}
+				    WHERE `inventory_item_id` = @itemId
+				;";
+			}
+			else {
+				throw new \Exception('unknown case without mutation or original count changed');
+			}
 		}
+		
+		$output->writeln('<info>Exporting part mutation notes ...</info>');
+		
+		foreach ($set as $data) {
+			// @todo
+			
+			$noteCreated   = $partMutationCsvLine[$partMutationMapping['note_created']]; // 'onm_datum',
+			$noteContactId = $partMutationCsvLine[$partMutationMapping['note_contact_id']]; // 'onm_mdw_id',
+			
+			/*
+			$notes[] = [
+				'createdAt' => $noteCreated,
+				'createdBy' => $noteContactId,
+				'contact'   => $mutationMemberId,
+				'item'      => $itemSku,
+				'text'      => $noteText,
+			];
+			*/
+		}
+		
+		$convertedFileName = 'LendEngineItemPartMutations_ExtraData_'.time().'.sql';
+		file_put_contents($dataDirectory.'/'.$convertedFileName, implode(PHP_EOL, $partMutationQueries));
+		$output->writeln('<info>Done. ' . count($partMutationQueries) . ' SQLs for part mutations stored in ' . $convertedFileName . '</info>');
 		
 		return Command::SUCCESS;
+	}
+	
+	/**
+	 * @param  string $type one of self::TYPE_* consts
+	 * @param  array{0: 'onm_kapot', 1: 'onm_oms', 2: 'onm_corr_oms'}  $explanations
+	 */
+	private function getCleanMutationExplanation(string $type, array $explanations): ?string {
+		// @todo
+		
+		$newMutationExplanation = $mutationExplanations['onm_oms'];
+		$newMutationExplanation = str_replace(self::DEFAULT_EXPLANATION_BROKEN, '', $newMutationExplanation);
+		$newMutationExplanation = trim($newMutationExplanation);
+		if (strlen($newMutationExplanation) <= 1) {
+			$newMutationExplanation = '';
+		}
+		if ($newMutationExplanation === '') {
+			$newMutationExplanation = 'kapot';
+		}
 	}
 }
