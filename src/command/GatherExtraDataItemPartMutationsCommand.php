@@ -261,7 +261,7 @@ class GatherExtraDataItemPartMutationsCommand extends Command
 		foreach ($partsWithMutationRecords as $partId => $partMutationRecord) {
 			$itemSku = $partRelatedDataMapping[$partId]['itemSku'];
 			if ($itemSku !== $lastItemSku) {
-				$partMutationQueries[] = PHP_EOL.PHP_EOL.PHP_EOL."SET @itemId = (
+				$partMutationQueries[] = "SET @itemId = (
 				    SELECT `id`
 				    FROM `inventory_item`
 				    WHERE `sku` = '".$itemSku."'
