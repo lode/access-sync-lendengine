@@ -6,6 +6,8 @@ namespace Lode\AccessSyncLendEngine\command;
 
 use Lode\AccessSyncLendEngine\service\ConvertCsvService;
 use Lode\AccessSyncLendEngine\specification\ArticleSpecification;
+use Lode\AccessSyncLendEngine\specification\EmployeeSpecification;
+use Lode\AccessSyncLendEngine\specification\MemberSpecification;
 use Lode\AccessSyncLendEngine\specification\PartMutationSpecification;
 use Lode\AccessSyncLendEngine\specification\PartSpecification;
 use Symfony\Component\Console\Attribute\AsCommand;
@@ -38,6 +40,8 @@ class GatherExtraDataItemPartMutationsCommand extends Command
 				'Onderdeel.csv',
 				'OnderdeelMutatie.csv',
 				'Artikel.csv',
+				'Lid.csv',
+				'Medewerker.csv',
 			],
 			$output,
 		);
@@ -57,6 +61,13 @@ class GatherExtraDataItemPartMutationsCommand extends Command
 			'mutation_count'       => ['onm_aantal', 'onm_corr_aantal'],
 			'note_created'         => 'onm_datum',
 			'note_contact_id'      => 'onm_mdw_id',
+			'note_closed'          => ['onm_corr_datum', 'onm_definitiefdatum'],
+		];
+		
+		$memberMapping = [
+			'member_id'         => 'lid_id',
+			'contact_id'        => 'lid_vrw_id',
+			'membership_number' => 'lid_key',
 		];
 		
 		$partCsvLines = $service->getExportCsv($dataDirectory.'/Onderdeel.csv', (new PartSpecification())->getExpectedHeaders());
@@ -67,6 +78,12 @@ class GatherExtraDataItemPartMutationsCommand extends Command
 		
 		$articleCsvLines = $service->getExportCsv($dataDirectory.'/Artikel.csv', (new ArticleSpecification())->getExpectedHeaders());
 		$output->writeln('Imported ' . count($articleCsvLines). ' artikelen');
+		
+		$memberCsvLines = $service->getExportCsv($dataDirectory.'/Lid.csv', (new MemberSpecification())->getExpectedHeaders());
+		$output->writeln('Imported ' . count($memberCsvLines) . ' members');
+		
+		$employeeCsvLines = $service->getExportCsv($dataDirectory.'/Medewerker.csv', (new EmployeeSpecification())->getExpectedHeaders());
+		$output->writeln('Imported ' . count($employeeCsvLines). ' medewerkers');
 		
 		$canonicalArticleMapping = [];
 		foreach ($articleCsvLines as $articleCsvLine) {
@@ -96,6 +113,33 @@ class GatherExtraDataItemPartMutationsCommand extends Command
 				'originalCount' => (int) $partOriginalCount,
 				'description'   => $partDescription,
 			];
+		}
+		
+		$membershipNumberMapping = [];
+		foreach ($memberCsvLines as $memberCsvLine) {
+			$memberId         = $memberCsvLine[$memberMapping['member_id']];
+			$membershipNumber = $memberCsvLine[$memberMapping['membership_number']];
+			
+			$membershipNumberMapping[$memberId] = $membershipNumber;
+		}
+		
+		$memberMembershipNumberMapping      = [];
+		$responsibleMembershipNumberMapping = [];
+		foreach ($memberCsvLines as $memberCsvLine) {
+			$memberId      = $memberCsvLine[$memberMapping['member_id']];
+			$responsibleId = $memberCsvLine[$memberMapping['contact_id']];
+			$memberNumber  = $memberCsvLine[$memberMapping['membership_number']];
+			
+			$memberMembershipNumberMapping[$memberId]           = $memberNumber;
+			$responsibleMembershipNumberMapping[$responsibleId] = $memberNumber;
+		}
+		
+		$employeeMapping = [];
+		foreach ($employeeCsvLines as $employeeCsvLine) {
+			$employeeId    = $employeeCsvLine['mdw_id'];
+			$responsibleId = $employeeCsvLine['mdw_vrw_id'];
+			
+			$employeeMapping[$employeeId] = $responsibleId;
 		}
 		
 		$output->writeln('<info>Validating part mutations input format ...</info>');
@@ -298,26 +342,126 @@ class GatherExtraDataItemPartMutationsCommand extends Command
 			}
 		}
 		
-		/* @todo
 		$output->writeln('<info>Exporting part mutation notes ...</info>');
 		
-		foreach ($set as $data) {
-			$noteCreated   = $partMutationCsvLine[$partMutationMapping['note_created']]; // 'onm_datum',
-			$noteContactId = $partMutationCsvLine[$partMutationMapping['note_contact_id']]; // 'onm_mdw_id',
+		$noteQueries = [];
+		foreach ($partMutationCsvLines as $partMutationCsvLine) {
+			$partId               = $partMutationCsvLine[$partMutationMapping['part_id']];
+			$mutationExplanations = array_intersect_key($partMutationCsvLine, array_flip($partMutationMapping['mutation_explanation'])); // ['onm_kapot', 'onm_oms', 'onm_corr_oms'],
+			$mutationCounts       = array_intersect_key($partMutationCsvLine, array_flip($partMutationMapping['mutation_count'])); // ['onm_aantal', 'onm_corr_aantal'],
 			
-			$notes[] = [
-				'createdAt' => $noteCreated,
-				'createdBy' => $noteContactId,
-				'contact'   => $mutationMemberId,
-				'item'      => $itemSku,
-				'text'      => $noteText,
-			];
+			// skip mutations of archived items
+			if (isset($partRelatedDataMapping[$partId]) === false) {
+				continue;
+			}
+			
+			if ($partMutationCsvLine[$partMutationMapping['part_count']] !== '') {
+				// not the focus
+				continue;
+			}
+			elseif ($mutationCounts['onm_corr_aantal'] !== '') {
+				// makes no sense when not also logging the missing note at missing date
+				continue;
+			}
+			else {
+				$type = self::TYPE_MISSING_OR_BROKEN;
+			}
+			
+			// basics
+			$itemSku          = $partRelatedDataMapping[$partId]['itemSku'];
+			$memberId         = $partMutationCsvLine[$partMutationMapping['mutation_member_id']];
+			$membershipNumber = $membershipNumberMapping[$memberId] ?? null;
+			$noteCreatedAt    = \DateTime::createFromFormat('Y-n-j H:i:s', $partMutationCsvLine[$partMutationMapping['note_created']]);
+			
+			// created by
+			$employeeId       = $partMutationCsvLine[$partMutationMapping['note_contact_id']];
+			$responsibleId    = $employeeMapping[$employeeId];
+			$createdByNumber  = $responsibleMembershipNumberMapping[$responsibleId];
+			
+			// close it directly?
+			$noteClosedFields = array_intersect_key($partMutationCsvLine, array_flip($partMutationMapping['note_closed'])); // ['onm_corr_datum', 'onm_definitiefdatum'],
+			if ($type === self::TYPE_FOUND_OR_REPAIRED) {
+				$noteClosedAt = \DateTime::createFromFormat('Y-n-j H:i:s', $noteClosedFields['onm_corr_datum']);
+				$noteStatus = 'closed';
+			}
+			elseif ($type === self::TYPE_PERMANENTLY_GONE) {
+				$noteClosedAt = \DateTime::createFromFormat('Y-n-j H:i:s', $noteClosedFields['onm_definitiefdatum']);
+				$noteStatus = 'closed';
+			}
+			elseif ($membershipNumber !== null) {
+				$noteStatus   = 'open';
+				$noteClosedAt = null;
+			}
+			else {
+				// not caused by member
+				$noteStatus   = null;
+				$noteClosedAt = null;
+			}
+			
+			// summary
+			$partDescription = $partRelatedDataMapping[$partId]['description'];
+			if ($type === self::TYPE_PERMANENTLY_GONE) {
+				$mutationExplanation = '1 permanently gone';
+			}
+			else {
+				$mutationExplanation = $this->getCleanMutationExplanation($type, $mutationExplanations);
+				if ($mutationExplanation === null) {
+					$mutationExplanation = '1 '.self::DEFAULT_EXPLANATION_MISSING;
+				}
+			}
+			$noteText = 'Part "'.$partDescription.'" changed: '.$mutationExplanation;
+			
+			$memberQuery = "";
+			if ($membershipNumber !== null) {
+				$memberQuery = "
+					`contact_id` = (
+						SELECT IFNULL(
+							(
+								SELECT `id`
+								FROM `contact`
+								WHERE `membership_number` = '".$membershipNumber."'
+							), 1
+						)
+					),
+				";
+			}
+			
+			$noteQueries[] = "
+				INSERT INTO `note` SET
+				`created_by` = (
+					SELECT IFNULL(
+						(
+							SELECT `id`
+							FROM `contact`
+							WHERE `membership_number` = '".$createdByNumber."'
+						), 1
+					)
+				),
+				`inventory_item_id` = (
+					SELECT IFNULL(
+						(
+							SELECT `id`
+							FROM `inventory_item`
+							WHERE `sku` = '".$itemSku."'
+						), 1
+					)
+				),
+				{$memberQuery}
+				`created_at` = '".$noteCreatedAt->format('Y-m-d H:i:s')."',
+				`closed_at` = ".($noteClosedAt !== null ? "'".$noteClosedAt->format('Y-m-d H:i:s')."'" : "NULL").",
+				`text` = '".str_replace("'", "\'", $noteText)."',
+				`admin_only` = 1,
+				`status` = ".($noteStatus !== null ? "'".$noteStatus."'" : "NULL")."
+			;";
 		}
-		*/
 		
 		$convertedFileName = 'LendEngineItemPartMutations_ExtraData_'.time().'.sql';
 		file_put_contents($dataDirectory.'/'.$convertedFileName, implode(PHP_EOL, $partMutationQueries));
 		$output->writeln('<info>Done. ' . count($partMutationQueries) . ' SQLs for part mutations stored in ' . $convertedFileName . '</info>');
+		
+		$convertedFileName = 'LendEngineItemPartMutationNotes_ExtraData_'.time().'.sql';
+		file_put_contents($dataDirectory.'/'.$convertedFileName, implode(PHP_EOL, $noteQueries));
+		$output->writeln('<info>Done. ' . count($noteQueries) . ' SQLs for part mutation notes stored in ' . $convertedFileName . '</info>');
 		
 		return Command::SUCCESS;
 	}
