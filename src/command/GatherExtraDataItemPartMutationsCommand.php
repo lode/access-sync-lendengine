@@ -238,6 +238,7 @@ class GatherExtraDataItemPartMutationsCommand extends Command
 				}
 			}
 			
+			// add 'x missing' if there is a higher count than there are explanations for
 			if (count($partMutationRecord['mutationExplanation']) > 0 && count($partMutationRecord['mutationExplanation']) < $partMutationRecord['mutationCount']) {
 				$partMutationRecord['mutationExplanation'][] = self::DEFAULT_EXPLANATION_MISSING;
 			}
@@ -350,10 +351,12 @@ class GatherExtraDataItemPartMutationsCommand extends Command
 		
 		// single explanation
 		if (count($explanations) === 1) {
+			// for the 'x broken' it is good to add the count
 			if ($explanations[0] === self::DEFAULT_EXPLANATION_BROKEN) {
 				return $this->addCountToExplanation($explanations[0]);
 			}
 			
+			// otherwise, a single custom description is best without a count
 			return $explanations[0];
 		}
 		
