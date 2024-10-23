@@ -240,7 +240,9 @@ class GatherExtraDataItemPartMutationsCommand extends Command
 			
 			// add 'x missing' if there is a higher count than there are explanations for
 			if (count($partMutationRecord['mutationExplanation']) > 0 && count($partMutationRecord['mutationExplanation']) < $partMutationRecord['mutationCount']) {
-				$partMutationRecord['mutationExplanation'][] = self::DEFAULT_EXPLANATION_MISSING;
+				$difference = $partMutationRecord['mutationCount'] - count($partMutationRecord['mutationExplanation']);
+				$missingExplanations = array_fill(0, $difference, self::DEFAULT_EXPLANATION_MISSING);
+				$partMutationRecord['mutationExplanation'] = [...$partMutationRecord['mutationExplanation'], ...$missingExplanations];
 			}
 			
 			$partMutationRecord['mutationExplanation'] = $this->combineExplanations($partMutationRecord['mutationExplanation']);
