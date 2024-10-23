@@ -252,7 +252,7 @@ class GatherExtraDataItemPartMutationsCommand extends Command
 			}
 			
 			$partMutationRecord = [
-				'count'               => 0,
+				'count'               => $partRelatedDataMapping[$partId]['originalCount'],
 				'mutationCount'       => 0,
 				'mutationExplanation' => [],
 			];
