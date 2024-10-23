@@ -68,6 +68,36 @@ class GatherExtraDataItemPartMutationsCommand extends Command
 		$articleCsvLines = $service->getExportCsv($dataDirectory.'/Artikel.csv', (new ArticleSpecification())->getExpectedHeaders());
 		$output->writeln('Imported ' . count($articleCsvLines). ' artikelen');
 		
+		$canonicalArticleMapping = [];
+		foreach ($articleCsvLines as $articleCsvLine) {
+			$articleId  = $articleCsvLine['art_id'];
+			$articleSku = $articleCsvLine['art_key'];
+			
+			$canonicalArticleMapping[$articleSku] = $articleId;
+		}
+		$canonicalArticleMapping = array_flip($canonicalArticleMapping);
+		
+		$partRelatedDataMapping = [];
+		foreach ($partCsvLines as $partCsvLine) {
+			$partId            = $partCsvLine[$partMapping['part_id']];
+			$articleId         = $partCsvLine[$partMapping['article_id']];
+			$partOriginalCount = $partCsvLine[$partMapping['part_count']];
+			$partDescriptions  = array_intersect_key($partCsvLine, array_flip($partMapping['part_description'])); // ['ond_oms', 'ond_nadereoms']
+			$partDescription   = implode(' / ', array_filter($partDescriptions));
+			
+			// skip non-last items of duplicate SKUs
+			// SKUs are re-used and old articles are made inactive
+			if (isset($canonicalArticleMapping[$articleId]) === false) {
+				continue;
+			}
+			
+			$partRelatedDataMapping[$partId] = [
+				'itemSku'       => $canonicalArticleMapping[$articleId],
+				'originalCount' => (int) $partOriginalCount,
+				'description'   => $partDescription,
+			];
+		}
+		
 		// @todo map part original count for calculating permanently gone types
 		// @todo map part descriptions for filling notes
 		// @todo map item ids for query where statements
@@ -171,6 +201,11 @@ class GatherExtraDataItemPartMutationsCommand extends Command
 			$partId               = $partMutationCsvLine[$partMutationMapping['part_id']];
 			$mutationExplanations = array_intersect_key($partMutationCsvLine, array_flip($partMutationMapping['mutation_explanation'])); // ['onm_kapot', 'onm_oms', 'onm_corr_oms'],
 			$mutationCounts       = array_intersect_key($partMutationCsvLine, array_flip($partMutationMapping['mutation_count'])); // ['onm_aantal', 'onm_corr_aantal'],
+			
+			// skip mutations of archived items
+			if (isset($partRelatedDataMapping[$partId]) === false) {
+				continue;
+			}
 			
 			$partMutation = [
 				'type' => $type,
