@@ -98,46 +98,6 @@ class GatherExtraDataItemPartMutationsCommand extends Command
 			];
 		}
 		
-		// @todo map part original count for calculating permanently gone types
-		// @todo map part descriptions for filling notes
-		// @todo map item ids for query where statements
-		
-		/*
-		$canonicalArticleMapping = [];
-		foreach ($articleCsvLines as $articleCsvLine) {
-			$articleId  = $articleCsvLine['art_id'];
-			$articleSku = $articleCsvLine['art_key'];
-			
-			$canonicalArticleMapping[$articleSku] = $articleId;
-		}
-		$canonicalArticleMapping = array_flip($canonicalArticleMapping);
-		
-		$partToArticleMapping = [];
-		foreach ($partCsvLines as $partCsvLine) {
-			$partId    = $partCsvLine[$partMapping['part_id']];
-			$articleId = $partCsvLine[$partMapping['article_id']];
-			$partCount = $partCsvLine[$partMapping['part_count']];
-			
-			// skip non-last items of duplicate SKUs
-			// SKUs are re-used and old articles are made inactive
-			if (isset($canonicalArticleMapping[$articleId]) === false) {
-				continue;
-			}
-			
-			$itemSku = $canonicalArticleMapping[$articleId];
-			$description = implode(' / ', array_filter([
-				$partCsvLine[$partMapping['part_description'][0]],
-				$partCsvLine[$partMapping['part_description'][1]]
-			]));
-			
-			$partToArticleMapping[$partId] = [
-				'item_sku'         => $itemSku,
-				'part_count'       => $partCount,
-				'part_description' => $description,
-			];
-		}
-		*/
-		
 		$output->writeln('<info>Validating part mutations input format ...</info>');
 		
 		foreach ($partMutationCsvLines as $partMutationCsvLine) {
@@ -287,53 +247,64 @@ class GatherExtraDataItemPartMutationsCommand extends Command
 		
 		$output->writeln('<info>Sort part mutations for efficient queries ...</info>');
 		
-		// @todo sort parts per item
+		uksort($partsWithMutationRecords, function(int $partIdA, int $partIdB) use($partRelatedDataMapping) {
+			$itemSkuA = $partRelatedDataMapping[$partIdA]['itemSku'];
+			$itemSkuB = $partRelatedDataMapping[$partIdB]['itemSku'];
+			
+			return ($itemSkuA <=> $itemSkuB);
+		});
 		
 		$output->writeln('<info>Exporting part mutations ...</info>');
 		
 		$partMutationQueries = [];
+		$lastItemSku = null;
 		foreach ($partsWithMutationRecords as $partId => $partMutationRecord) {
-			// @todo determine when to switch item id
-			$partMutationQueries[] = "
-			    SELECT `id`
-			    FROM `inventory_item`
-			    WHERE `sku` = '".$itemSku."'
-			;";
+			$itemSku = $partRelatedDataMapping[$partId]['itemSku'];
+			if ($itemSku !== $lastItemSku) {
+				$partMutationQueries[] = PHP_EOL.PHP_EOL.PHP_EOL."SET @itemId = (
+				    SELECT `id`
+				    FROM `inventory_item`
+				    WHERE `sku` = '".$itemSku."'
+				);".PHP_EOL;
+				
+				$lastItemSku = $itemSku;
+			}
 			
 			if ($partMutationRecord['mutationCount'] !== 0) {
+				$description         = $partRelatedDataMapping[$partId]['description'];
 				$count               = $partMutationRecord['count'];
 				$mutationCount       = $partMutationRecord['mutationCount'];
 				$mutationExplanation = $partMutationRecord['mutationExplanation'];
 				
 				$partMutationQueries[] = "UPDATE `item_part` SET
-				    `count` = `count` + {$count},
-				    `mutationCount` = `mutationCount` + {$mutationCount},
-				    `mutationExplanation` = '".str_replace("'", "\'", $mutationExplanation)."'
+				    `count` = {$count},
+				    `mutationCount` = {$mutationCount},
+				    `mutationExplanation` = ".($mutationExplanation !== null ? "'".str_replace("'", "\'", $mutationExplanation)."'" : "NULL")."
 				    WHERE `inventory_item_id` = @itemId
-				;";
+				    AND `description` = '".str_replace("'", "\'", $description)."'
+				;".PHP_EOL;
 			}
-			elseif ($partMutationRecord['count'] !== 0) {
+			elseif ($partMutationRecord['count'] !== $partRelatedDataMapping[$partId]['originalCount']) {
 				$count = $partMutationRecord['count'];
 				
 				$partMutationQueries[] = "UPDATE `item_part` SET
-				    `count` = `count` + {$count}
+				    `count` = {$count}
 				    WHERE `inventory_item_id` = @itemId
-				;";
+				    AND `description` = '".str_replace("'", "\'", $description)."'
+				;".PHP_EOL;
 			}
 			else {
 				throw new \Exception('unknown case without mutation or original count changed');
 			}
 		}
 		
+		/* @todo
 		$output->writeln('<info>Exporting part mutation notes ...</info>');
 		
 		foreach ($set as $data) {
-			// @todo
-			
 			$noteCreated   = $partMutationCsvLine[$partMutationMapping['note_created']]; // 'onm_datum',
 			$noteContactId = $partMutationCsvLine[$partMutationMapping['note_contact_id']]; // 'onm_mdw_id',
 			
-			/*
 			$notes[] = [
 				'createdAt' => $noteCreated,
 				'createdBy' => $noteContactId,
@@ -341,8 +312,8 @@ class GatherExtraDataItemPartMutationsCommand extends Command
 				'item'      => $itemSku,
 				'text'      => $noteText,
 			];
-			*/
 		}
+		*/
 		
 		$convertedFileName = 'LendEngineItemPartMutations_ExtraData_'.time().'.sql';
 		file_put_contents($dataDirectory.'/'.$convertedFileName, implode(PHP_EOL, $partMutationQueries));
