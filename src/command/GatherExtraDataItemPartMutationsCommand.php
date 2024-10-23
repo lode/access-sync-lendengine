@@ -21,8 +21,11 @@ class GatherExtraDataItemPartMutationsCommand extends Command
 	private const string TYPE_FOUND_OR_REPAIRED = 'found_or_repaired';
 	private const string TYPE_PERMANENTLY_GONE  = 'permanently_gone';
 	
+	private const string ACCESS_EXPLANATION_MISSING = 'kwijt';
+	private const string ACCESS_EXPLANATION_BROKEN  = 'Kapot, nl:';
+	
 	private const string DEFAULT_EXPLANATION_MISSING = 'kwijt';
-	private const string DEFAULT_EXPLANATION_BROKEN  = 'Kapot, nl:';
+	private const string DEFAULT_EXPLANATION_BROKEN  = 'kapot';
 	
 	protected function execute(InputInterface $input, OutputInterface $output): int
 	{
@@ -165,8 +168,6 @@ class GatherExtraDataItemPartMutationsCommand extends Command
 		
 		$partsWithMutations = [];
 		foreach ($parsedMutations as ['type' => $type, 'csvLine' => $partMutationCsvLine]) {
-			dd($type, $partMutationCsvLine);
-			
 			$partId               = $partMutationCsvLine[$partMutationMapping['part_id']];
 			$mutationExplanations = array_intersect_key($partMutationCsvLine, array_flip($partMutationMapping['mutation_explanation'])); // ['onm_kapot', 'onm_oms', 'onm_corr_oms'],
 			$mutationCounts       = array_intersect_key($partMutationCsvLine, array_flip($partMutationMapping['mutation_count'])); // ['onm_aantal', 'onm_corr_aantal'],
@@ -186,6 +187,10 @@ class GatherExtraDataItemPartMutationsCommand extends Command
 				
 				case self::TYPE_FOUND_OR_REPAIRED:
 					// nothing needed for mutations, maybe process for notes
+					$mutationExplanation = $this->getCleanMutationExplanation($type, $mutationExplanations);
+					if ($mutationExplanation !== null) {
+						$partMutation['mutationSummary'] = $mutationExplanation;
+					}
 					break;
 				
 				case self::TYPE_PERMANENTLY_GONE:
@@ -203,13 +208,25 @@ class GatherExtraDataItemPartMutationsCommand extends Command
 		
 		$partsWithMutationRecords = [];
 		foreach ($partsWithMutations as $partId => $partMutations) {
+			// skip mutations which are all found/repaired and thus don't need a record
+			$partMutations = array_filter($partMutations, function(array $partMutation) {
+				return ($partMutation['type'] !== self::TYPE_FOUND_OR_REPAIRED);
+			});
+			if ($partMutations === []) {
+				continue;
+			}
+			
 			$partMutationRecord = [
 				'count'               => 0,
 				'mutationCount'       => 0,
-				'mutationExplanation' => null,
+				'mutationExplanation' => [],
 			];
 			
 			foreach ($partMutations as $partMutation) {
+				if ($partMutation['type'] === self::TYPE_FOUND_OR_REPAIRED) {
+					continue;
+				}
+				
 				if (isset($partMutation['count']) === true) {
 					$partMutationRecord['count'] += $partMutation['count'];
 				}
@@ -217,40 +234,15 @@ class GatherExtraDataItemPartMutationsCommand extends Command
 					$partMutationRecord['mutationCount'] += $partMutation['mutationCount'];
 				}
 				if (isset($partMutation['mutationExplanation']) === true) {
-					// @todo
-					// - if the same, increase the count
-					// - if different, add each with count 1
-					
-					$partMutationRecord['mutationExplanation'] = $partMutation['mutationExplanation'];
-					
-					/*
-					if (isset($mutationInformation['mutationExplanation'])) {
-						$summary = [];
-						$countWithExplanation = 0;
-						foreach ($mutationInformation['mutationExplanation'] as $mutationExplanationInformation) {
-							if (isset($summary[$mutationExplanationInformation['explanation']]) === false) {
-								$summary[$mutationExplanationInformation['explanation']] = 0;
-							}
-							
-							$summary[$mutationExplanationInformation['explanation']] += $mutationExplanationInformation['count'];
-							$countWithExplanation += $mutationExplanationInformation['count'];
-						}
-						
-						$finalExplanation = [];
-						foreach ($summary as $explanation => $count) {
-							$finalExplanation[] = (str_contains($explanation, (string) $count)) ? $explanation : $count.' '.$explanation;
-						}
-						
-						if ($countWithExplanation < $mutationInformation['mutationCount']) {
-							$countMissing = ($mutationInformation['mutationCount'] - $countWithExplanation);
-							$finalExplanation[] = ($countMissing > 1) ? $countMissing.' missen' : $countMissing.' mist';
-						}
-						
-						$mutationInformation['mutationExplanation'] = implode('; ', $finalExplanation);
-					}
-					*/
+					$partMutationRecord['mutationExplanation'][] = $partMutation['mutationExplanation'];
 				}
 			}
+			
+			if (count($partMutationRecord['mutationExplanation']) > 0 && count($partMutationRecord['mutationExplanation']) < $partMutationRecord['mutationCount']) {
+				$partMutationRecord['mutationExplanation'][] = self::DEFAULT_EXPLANATION_MISSING;
+			}
+			
+			$partMutationRecord['mutationExplanation'] = $this->combineExplanations($partMutationRecord['mutationExplanation']);
 			
 			$partsWithMutationRecords[$partId] = $partMutationRecord;
 		}
@@ -323,19 +315,76 @@ class GatherExtraDataItemPartMutationsCommand extends Command
 	
 	/**
 	 * @param  string $type one of self::TYPE_* consts
-	 * @param  array{0: 'onm_kapot', 1: 'onm_oms', 2: 'onm_corr_oms'}  $explanations
+	 * @param  array<'onm_kapot': string, 'onm_oms': string, 'onm_corr_oms': string}  $explanations
 	 */
 	private function getCleanMutationExplanation(string $type, array $explanations): ?string {
-		// @todo
+		if ($type === self::TYPE_FOUND_OR_REPAIRED) {
+			return $explanations['onm_corr_oms'];
+		}
 		
-		$newMutationExplanation = $mutationExplanations['onm_oms'];
-		$newMutationExplanation = str_replace(self::DEFAULT_EXPLANATION_BROKEN, '', $newMutationExplanation);
-		$newMutationExplanation = trim($newMutationExplanation);
-		if (strlen($newMutationExplanation) <= 1) {
-			$newMutationExplanation = '';
+		$cleanExplanation = $explanations['onm_oms'];
+		
+		if ($explanations['onm_kapot'] === '1') {
+			$cleanExplanation = trim(str_replace(self::ACCESS_EXPLANATION_BROKEN, '', $cleanExplanation));
+			if ($cleanExplanation === '' || strlen($cleanExplanation) < 2) {
+				$cleanExplanation = self::DEFAULT_EXPLANATION_BROKEN;
+			}
 		}
-		if ($newMutationExplanation === '') {
-			$newMutationExplanation = 'kapot';
+		else {
+			$cleanExplanation = trim(str_replace(self::ACCESS_EXPLANATION_MISSING, '', $cleanExplanation));
+			$cleanExplanation = ltrim($cleanExplanation, '(');
+			$cleanExplanation = rtrim($cleanExplanation, ')');
+			if ($cleanExplanation === '' || strlen($cleanExplanation) < 2) {
+				$cleanExplanation = null;
+			}
 		}
+		
+		return $cleanExplanation;
+	}
+	
+	private function combineExplanations(array $explanations): ?string {
+		// no explanations
+		if ($explanations === []) {
+			return null;
+		}
+		
+		// single explanation
+		if (count($explanations) === 1) {
+			if ($explanations[0] === self::DEFAULT_EXPLANATION_BROKEN) {
+				return $this->addCountToExplanation($explanations[0]);
+			}
+			
+			return $explanations[0];
+		}
+		
+		// single explanation, multiple times
+		if (count(array_unique($explanations)) === 1) {
+			return $this->addCountToExplanation($explanations[0], count($explanations));
+		}
+		
+		// multiple different explanations
+		$groups = [];
+		foreach ($explanations as $explanation) {
+			if (isset($groups[$explanation]) === false) {
+				$groups[$explanation] = 0;
+			}
+			
+			$groups[$explanation]++;
+		}
+		
+		$singleExplanation = [];
+		foreach ($groups as $explanation => $count) {
+			$singleExplanation[] = $this->addCountToExplanation($explanation, $count);
+		}
+		
+		return implode(', ', $singleExplanation);
+	}
+	
+	private function addCountToExplanation(string $explanation, int $count = 1): string {
+		if (str_contains($explanation, (string) $count) === false) {
+			$explanation = $count.' '.$explanation;
+		}
+		
+		return $explanation;
 	}
 }
