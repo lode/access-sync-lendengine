@@ -329,7 +329,8 @@ class GatherExtraDataItemPartMutationsCommand extends Command
 				;".PHP_EOL;
 			}
 			elseif ($partMutationRecord['count'] !== $partRelatedDataMapping[$partId]['originalCount']) {
-				$count = $partMutationRecord['count'];
+				$description = $partRelatedDataMapping[$partId]['description'];
+				$count       = $partMutationRecord['count'];
 				
 				$partMutationQueries[] = "UPDATE `item_part` SET
 				    `count` = {$count}
