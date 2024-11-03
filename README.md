@@ -77,6 +77,26 @@ Each script migrates a part of the data, you can choose which to run and do a ma
 | Contacts extras | `gather-extra-data-contacts` | Contact created. |
 | Contacts obfuscation | `obfuscate-contacts [timestamp]` | Obfuscate contact migration so it can be used to test with. |
 
+Here's all the commands after each other.
+Run them one-by-one as some are not needed for your use case, and some have interactive output.
+
+```bash
+./script/console ./script/command insight
+./script/console ./script/command convert-contacts
+./script/console ./script/command convert-items
+./script/console ./script/command convert-website-csvs [csvTimestamp]
+./script/console ./script/command gather-extra-data-item-parts
+./script/console ./script/command gather-extra-data-item-part-mutations
+./script/console ./script/command gather-extra-data-item-images photos
+./script/console ./script/command gather-extra-data-memberships
+./script/console ./script/command gather-extra-data-item-location
+./script/console ./script/command gather-extra-data-notes
+./script/console ./script/command gather-extra-data-contact-notes
+./script/console ./script/command gather-extra-data-items
+./script/console ./script/command gather-extra-data-contacts
+./script/console ./script/command obfuscate-contacts [timestamp]
+```
+
 Output files `LendEngine*.csv` & `LendEngine*.sql` will be added in `data/`.
 
 ### 3. Import CSVs in Lend Engine admin
