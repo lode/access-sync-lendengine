@@ -99,6 +99,8 @@ Run them one-by-one as some are not needed for your use case, and some have inte
 
 Output files `LendEngine*.csv` & `LendEngine*.sql` will be added in `data/`.
 
+Don't forget to update duplicate email addresses in `LendEngine_01_Contacts_[timestamp].csv` before importing.
+
 ### 3. Import CSVs in Lend Engine admin
 
 The CSVs from the above scripts (`LendEngine*.csv` for items & contacts) can be imported via Lend Engine's CSV import admin.
