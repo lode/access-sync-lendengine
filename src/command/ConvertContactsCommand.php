@@ -107,7 +107,6 @@ class ConvertContactsCommand extends Command
 		
 		$skipped = [
 			'not-active' => [],
-			'no-email'   => [],
 			'no-member'  => [],
 		];
 		
@@ -128,8 +127,7 @@ class ConvertContactsCommand extends Command
 			$memberCsvLine = $responsibleMemberMapping[$responsibleId];
 			
 			if ($responsibleCsvLine['vrw_email'] === '') {
-				$skipped['no-email'][] = $responsibleCsvLine;
-				continue;
+				$responsibleCsvLine['vrw_email'] = 'no-email-member-' . $memberCsvLine['lid_key'] . '@example.org';
 			}
 			
 			$contactConverted = [
@@ -206,6 +204,7 @@ class ConvertContactsCommand extends Command
 		file_put_contents($dataDirectory.'/'.$convertedFileName, $convertedCsv);
 		
 		$output->writeln('<info>Done. ' . count($contactsConverted) . ' contacts stored in ' . $convertedFileName . '</info>');
+		$output->writeln('Remember to update duplicate email addresses before importing.');
 		
 		return Command::SUCCESS;
 	}

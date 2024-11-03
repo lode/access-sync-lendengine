@@ -158,7 +158,7 @@ class InsightCommand extends Command
 		
 		$output->writeln('Duplicates email: '.count($cases));
 		$output->writeln(implode(PHP_EOL, $info));
-		$output->writeln('<comment>These need to be manually corrected before or after importing.</comment>');
+		$output->writeln('<comment>These need to be manually corrected before/after importing in `LendEngineContacts_*.csv`.</comment>');
 		if ($this->getHelper('question')->ask($input, $output, new ConfirmationQuestion('<question>Debug? [y/N]</question> ', false)) === true) {
 			print_r($cases);
 		}
@@ -180,7 +180,7 @@ class InsightCommand extends Command
 		
 		$output->writeln('Without email: '.count($cases));
 		$output->writeln(implode(PHP_EOL, $info));
-		$output->writeln('<comment>These need to be manually imported, or given an email address before converting.</comment>');
+		$output->writeln('<comment>These will be given a standard email address (no-email-member-<membership-number>@example.org) and can be changed before/after importing.</comment>');
 		if ($this->getHelper('question')->ask($input, $output, new ConfirmationQuestion('<question>Debug? [y/N]</question> ', false)) === true) {
 			print_r($cases);
 		}

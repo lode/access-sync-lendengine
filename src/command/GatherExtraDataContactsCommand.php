@@ -43,7 +43,6 @@ class GatherExtraDataContactsCommand extends Command
 		
 		$responsibleMapping = [
 			'created_at' => 'vrw_toevoegdatum',
-			'email'      => 'vrw_email',
 		];
 		$memberMapping = [
 			'contact_id'        => 'lid_vrw_id',
