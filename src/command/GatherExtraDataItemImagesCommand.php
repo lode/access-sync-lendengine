@@ -145,6 +145,12 @@ class GatherExtraDataItemImagesCommand extends Command
 				),
 				`image_name` = '".$imageNewFileName."'
 			;";
+			
+			$itemImagesQueries[] = "
+				UPDATE `inventory_item` SET
+				`image_name` = '".$imageNewFileName."'
+				WHERE `sku` = '".$articleSku."'
+			;";
 		}
 		
 		$progressBar->finish();
