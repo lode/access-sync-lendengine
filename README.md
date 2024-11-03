@@ -133,11 +133,17 @@ Go through all items to manually migrate item warnings.
 
 - Open an article in Access and go to the warning tab ("Waarschuwingen").
 - Open the same in Lend Engine (Admin » Items » Browse items).
-- If you see a warning that you don't have a generic type yet: create a generic type (Admin » Settings » Check out prompts / Check in prompts / Item fields).
-- Afterwards, or when you see a warning that you already have a generic type for: connect a generic type to a specific item (Check in/out / Custom fields).
+- If you see a warning that you don't have a generic type for yet: create a generic type (Admin » Settings » Check out prompts / Check in prompts / Item fields).
+- Afterwards (or when you're importing a warning that you already have a generic type for): connect a generic type to a specific item (Check in/out / Custom fields).
 
 
 ## Contributing
+
+### Development
+
+- A new script can be added to `src/command/` and `script/command`.
+- If using a new export table from Access add it to `src/specification/`.
+- Mention new scripts (and optionally new tables) to the lists in the readme.
 
 ### Usage after first setup
 
@@ -156,8 +162,3 @@ For managing databases:
 
 - username: `root`
 - password: `root-secret`
-
-### Development
-
-- A new script can be added to `src/command/` and `script/command`.
-- If using a new export table from Access add it to `src/specification/`.
