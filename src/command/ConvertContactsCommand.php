@@ -163,8 +163,10 @@ class ConvertContactsCommand extends Command
 			 * converting
 			 */
 			
+			// put affix ('tussenvoegsel') before last name
+			$contactConverted['Last name'] = array_reverse($contactConverted['Last name']);
 			// concat last name affix ('tussenvoegsel') and last name
-			$contactConverted['Last name'] = implode(' ', $contactConverted['Last name']);
+			$contactConverted['Last name'] = trim(implode(' ', $contactConverted['Last name']));
 			
 			// collecting address info
 			$streetId = $contactConverted['Address line 1'][0];
