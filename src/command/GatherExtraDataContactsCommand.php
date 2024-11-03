@@ -76,10 +76,7 @@ class GatherExtraDataContactsCommand extends Command
 			;";
 		}
 		
-		$convertedFileName = 'LendEngine_09_Contacts_ExtraData_'.time().'.sql';
-		file_put_contents($dataDirectory.'/'.$convertedFileName, implode(PHP_EOL, $contactQueries));
-		
-		$output->writeln('<info>Done. ' . count($contactQueries) . ' SQLs for contacts stored in ' . $convertedFileName . '</info>');
+		$service->createExportSqls($output, $dataDirectory, '09_Contacts_ExtraData', $contactQueries, 'contacts');
 		
 		return Command::SUCCESS;
 	}

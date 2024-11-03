@@ -113,7 +113,7 @@ class GatherExtraDataNotesCommand extends Command
 		}
 		$canonicalArticleMapping = array_flip($canonicalArticleMapping);
 		
-		$contactNoteQueries = [];
+		$noteQueries = [];
 		$failures = [];
 		foreach ($messageCsvLines as $messageCsvLine) {
 			// filter on kinds meant for contacts
@@ -208,7 +208,7 @@ class GatherExtraDataNotesCommand extends Command
 				$status = "'open'";
 			}
 			
-			$contactNoteQueries[] = "
+			$noteQueries[] = "
 				INSERT INTO `note` SET
 				`created_by` = (
 					SELECT IFNULL(
@@ -234,10 +234,7 @@ class GatherExtraDataNotesCommand extends Command
 			}
 		}
 		
-		$convertedFileName = 'LendEngine_10_Notes_ExtraData_'.time().'.sql';
-		file_put_contents($dataDirectory.'/'.$convertedFileName, implode(PHP_EOL, $contactNoteQueries));
-		
-		$output->writeln('<info>Done. ' . count($contactNoteQueries) . ' SQLs for notes stored in ' . $convertedFileName . '</info>');
+		$service->createExportSqls($output, $dataDirectory, '10_Notes_ExtraData', $noteQueries, 'notes');
 		
 		return Command::SUCCESS;
 	}

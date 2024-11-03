@@ -456,13 +456,8 @@ class GatherExtraDataItemPartMutationsCommand extends Command
 			;";
 		}
 		
-		$convertedFileName = 'LendEngine_04_ItemPartMutations_ExtraData_'.time().'.sql';
-		file_put_contents($dataDirectory.'/'.$convertedFileName, implode(PHP_EOL, $partMutationQueries));
-		$output->writeln('<info>Done. ' . count($partMutationQueries) . ' SQLs for part mutations stored in ' . $convertedFileName . '</info>');
-		
-		$convertedFileName = 'LendEngine_10_ItemPartMutationNotes_ExtraData_'.time().'.sql';
-		file_put_contents($dataDirectory.'/'.$convertedFileName, implode(PHP_EOL, $noteQueries));
-		$output->writeln('<info>Done. ' . count($noteQueries) . ' SQLs for part mutation notes stored in ' . $convertedFileName . '</info>');
+		$service->createExportSqls($output, $dataDirectory, '04_ItemPartMutations_ExtraData', $partMutationQueries, 'part mutations');
+		$service->createExportSqls($output, $dataDirectory, '10_ItemPartMutationNotes_ExtraData', $noteQueries, 'part mutation notes');
 		
 		return Command::SUCCESS;
 	}

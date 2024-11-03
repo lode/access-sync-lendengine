@@ -162,12 +162,8 @@ class GatherExtraDataItemImagesCommand extends Command
 			}
 		}
 		
-		$convertedFileName = 'LendEngine_05_ItemImages_ExtraData_'.time().'.sql';
-		file_put_contents($dataDirectory.'/'.$convertedFileName, implode(PHP_EOL, $itemImagesQueries));
-		
-		$output->writeln('<info>Done.</info>');
-		$output->writeln('- ' . count($itemImagesQueries) . ' SQLs for item custom fields stored in ' . $convertedFileName);
-		$output->writeln('- new image files stored in ' . $exportDirectory . ', bundle in a zip file');
+		$service->createExportSqls($output, $dataDirectory, '05_ItemImages_ExtraData', $itemImagesQueries, 'item images');
+		$output->writeln('New image files stored in ' . $exportDirectory);
 		
 		return Command::SUCCESS;
 	}

@@ -87,15 +87,7 @@ class GatherExtraDataItemPartsCommand extends Command
 			;";
 		}
 		
-		$output->writeln('<info>Done. ' . count($itemPartQueries) . ' SQLs for parts stored in:</info>');
-		
-		$itemPartQueryChunks = array_chunk($itemPartQueries, 2500);
-		foreach ($itemPartQueryChunks as $index => $itemPartQueryChunk) {
-			$convertedFileName = 'LendEngine_03_ItemParts_ExtraData_'.time().'_chunk_'.($index+1).'.sql';
-			file_put_contents($dataDirectory.'/'.$convertedFileName, implode(PHP_EOL, $itemPartQueryChunk));
-			
-			$output->writeln('- '.$convertedFileName);
-		}
+		$service->createExportSqls($output, $dataDirectory, '03_ItemParts_ExtraData', $itemPartQueries, 'parts');
 		
 		return Command::SUCCESS;
 	}

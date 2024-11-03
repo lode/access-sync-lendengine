@@ -71,10 +71,7 @@ class GatherExtraDataItemsCommand extends Command
 			;";
 		}
 		
-		$convertedFileName = 'LendEngine_08_Items_ExtraData_'.time().'.sql';
-		file_put_contents($dataDirectory.'/'.$convertedFileName, implode(PHP_EOL, $itemQueries));
-		
-		$output->writeln('<info>Done. ' . count($itemQueries) . ' SQLs for items stored in ' . $convertedFileName . '</info>');
+		$service->createExportSqls($output, $dataDirectory, '08_Items_ExtraData', $itemQueries, 'items');
 		
 		return Command::SUCCESS;
 	}
