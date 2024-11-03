@@ -38,6 +38,7 @@ This discusses migrating data and making the correct settings.
 	- MeldingSoort
 	- Merk
 	- Onderdeel
+	- OnderdeelMutatie
 	- Plaats
 	- Straat
 	- Tarief
@@ -66,6 +67,7 @@ Each script migrates a part of the data, you can choose which to run and do a ma
 | Items | `convert-items` | Item basics: name, code, category, brand, price, etc. |
 | Items alternative | `convert-website-csvs [csvTimestamp]` | Item basics, alternative method with webcatalogus CSVs. |
 | Parts | `gather-extra-data-item-parts` | Count, description. |
+| Parts mutations | `gather-extra-data-item-part-mutations` | Count missing/broken, explanation. |
 | Images | `gather-extra-data-item-images photos` | Item images (SQL and converted image files). |
 | Memberships | `gather-extra-data-memberships` | Contact <> Subscription, period. |
 | Item status | `gather-extra-data-item-location` | Locations ("status") for items. |
@@ -133,17 +135,6 @@ Go through all items to manually migrate item warnings.
 - Open the same in Lend Engine (Admin » Items » Browse items).
 - If you see a warning that you don't have a generic type yet: create a generic type (Admin » Settings » Check out prompts / Check in prompts / Item fields).
 - Afterwards, or when you see a warning that you already have a generic type for: connect a generic type to a specific item (Check in/out / Custom fields).
-
-### Part mutations
-
-At this moment the best way to migrate this is by adjusting the part description to something alike "(1 missing)".
-
-Later, this might be done automatically.
-
-
-## To Do
-
-- Part mutations (needs LE implementation and adjusted migration afterwards)
 
 
 ## Contributing
