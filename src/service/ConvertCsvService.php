@@ -126,7 +126,28 @@ class ConvertCsvService {
 		if (count($queries) > $limit) {
 			$output->writeln('<info>Done. ' . count($queries) . ' SQLs for '.$description.' stored in:</info>');
 			
-			$chunks = array_chunk($queries, 2500);
+			// manually chunk to make sure `SET @variable` statements are not split
+			$index = 0;
+			$chunks = [$index => []];
+			$hasSetQueries = false;
+			$isSetQuery = false;
+			foreach ($queries as $query) {
+				$isSetQuery = str_contains($query, 'SET @');
+				$hasSetQueries = $hasSetQueries || $isSetQuery;
+				
+				$reachedLimit = count($chunks[$index]) > $limit;
+				$canSplitNow = ($hasSetQueries === false || $isSetQuery === true);
+				if ($reachedLimit === true && $canSplitNow === true) {
+					$index++;
+				}
+				
+				if (isset($chunks[$index]) === false) {
+					$chunks[$index] = [];
+				}
+				
+				$chunks[$index][] = $query;
+			}
+			
 			foreach ($chunks as $index => $chunk) {
 				$convertedFileName = 'LendEngine_'.$fileName.'_'.time().'_chunk_'.($index+1).'.sql';
 				file_put_contents($dataDirectory.'/'.$convertedFileName, implode(PHP_EOL, $chunk));
