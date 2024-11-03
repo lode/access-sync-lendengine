@@ -166,14 +166,11 @@ class GatherExtraDataMembershipsCommand extends Command
 			
 			if (in_array($tariff['category'], self::KNOWN_CATEGORIES, strict: true) === false) {
 				$category = self::CATEGORY_MEMBERSHIP;
-				$output->writeln('<comment>Unknown tariff category: "'.$tariff['category'].'", mapping to membership</comment>');
 			}
 			else {
 				// self::CATEGORY_*
 				$category = $tariff['category'];
 			}
-			
-			$output->writeln('Membership type: "'.$name.'", mapped to '.$category);
 			
 			$duration = 0;
 			$discount = 0;
@@ -181,6 +178,9 @@ class GatherExtraDataMembershipsCommand extends Command
 				$duration = round($tariff['count'] * self::TARIFF_UNITS[$tariff['unit']]);
 				$discount = 100.00;
 			}
+			
+			$output->write('Membership type: "'.$name.'" ('.$tariff['category'].'), mapped to '.$category);
+			$output->writeln(', '.$tariff['count'].'x'.$tariff['unit']);
 			
 			$membershipTypeQueries[] = "
 			    INSERT INTO `membership_type` SET

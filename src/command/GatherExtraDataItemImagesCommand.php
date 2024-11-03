@@ -12,6 +12,7 @@ use Symfony\Component\Console\Helper\ProgressBar;
 use Symfony\Component\Console\Input\InputArgument;
 use Symfony\Component\Console\Input\InputInterface;
 use Symfony\Component\Console\Output\OutputInterface;
+use Symfony\Component\Console\Question\ConfirmationQuestion;
 
 #[AsCommand(name: 'gather-extra-data-item-images')]
 class GatherExtraDataItemImagesCommand extends Command
@@ -68,11 +69,17 @@ class GatherExtraDataItemImagesCommand extends Command
 		
 		$imagePaths = glob($imagesDirectory.'/*');
 		$imagePathMapping = [];
+		$errors = [
+			'without-extension'      => [],
+			'multiple-files'         => [],
+			'article-code-not-found' => [],
+			'non-jpg'                => [],
+		];
 		foreach ($imagePaths as $imagePath) {
 			$fileName = basename($imagePath);
 			
 			if (str_contains($fileName, '.') === false) {
-				$output->writeln('<comment>Found images without extension '.$fileName.', skipping</comment>');
+				$errors['without-extension'][] = 'Found images without extension '.$fileName.', skipped';
 				continue;
 			}
 			
@@ -87,7 +94,7 @@ class GatherExtraDataItemImagesCommand extends Command
 				$newImageSupported      = (in_array($newImageExtension, $supportedExtensions, strict: true));
 				$preferedImagePath      = ($existingImageSupported === false && $newImageSupported === true) ? $imagePath : $imagePathMapping[$sanitizedArticleSku];
 				
-				$output->writeln('<comment>Found multiple images for '.$articleSku.', picked '.$preferedImagePath.'</comment>');
+				$errors['multiple-files'][] = 'Found multiple images for '.$articleSku.', picked '.$preferedImagePath;
 				
 				if ($preferedImagePath === $imagePathMapping[$sanitizedArticleSku]) {
 					continue;
@@ -107,7 +114,7 @@ class GatherExtraDataItemImagesCommand extends Command
 			
 			$sanitizedArticleSku = strtolower($articleSku);
 			if (isset($imagePathMapping[$sanitizedArticleSku]) === false) {
-				$output->writeln('<comment>No image found for '.$articleSku.', skipping</comment>');
+				$errors['article-code-not-found'][] = 'No image found for '.$articleSku.', skipped';
 				continue;
 			}
 			
@@ -116,7 +123,7 @@ class GatherExtraDataItemImagesCommand extends Command
 			// @todo support different extensions
 			$fileExtension = strtolower(substr($imagePath, strrpos($imagePath, '.') + 1));
 			if (in_array($fileExtension, $supportedExtensions, strict: true) === false) {
-				$output->writeln('<comment>Found non-jpg image for '.$articleSku.', skipping</comment>');
+				$errors['non-jpg'][] = 'Found non-jpg image for '.$articleSku.', skipped';
 				continue;
 			}
 			
@@ -142,6 +149,18 @@ class GatherExtraDataItemImagesCommand extends Command
 		
 		$progressBar->finish();
 		$output->writeln('');
+		
+		$errors = array_filter($errors);
+		if ($errors !== []) {
+			$output->writeln('<comment>Errors:</comment>');
+			foreach ($errors as $reason => $messages) {
+				$output->writeln('- '.$reason.': '.count($messages));
+			}
+			
+			if ($this->getHelper('question')->ask($input, $output, new ConfirmationQuestion('<question>Debug? [y/N]</question> ', false)) === true) {
+				print_r($errors);
+			}
+		}
 		
 		$convertedFileName = 'LendEngineItemImages_ExtraData_'.time().'.sql';
 		file_put_contents($dataDirectory.'/'.$convertedFileName, implode(PHP_EOL, $itemImagesQueries));
