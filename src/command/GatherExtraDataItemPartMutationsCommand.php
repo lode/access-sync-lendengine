@@ -322,9 +322,9 @@ class GatherExtraDataItemPartMutationsCommand extends Command
 				
 				$partMutationQueries[] = "UPDATE `item_part` SET
 				    `count` = {$count},
-				    `mutationCount` = {$mutationCount},
-				    `mutationExplanation` = ".($mutationExplanation !== null ? "'".str_replace("'", "\'", $mutationExplanation)."'" : "NULL")."
-				    WHERE `inventory_item_id` = @itemId
+				    `mutation_count` = {$mutationCount},
+				    `mutation_explanation` = ".($mutationExplanation !== null ? "'".str_replace("'", "\'", $mutationExplanation)."'" : "NULL")."
+				    WHERE `item_id` = @itemId
 				    AND `description` = '".str_replace("'", "\'", $description)."'
 				;".PHP_EOL;
 			}
@@ -334,7 +334,7 @@ class GatherExtraDataItemPartMutationsCommand extends Command
 				
 				$partMutationQueries[] = "UPDATE `item_part` SET
 				    `count` = {$count}
-				    WHERE `inventory_item_id` = @itemId
+				    WHERE `item_id` = @itemId
 				    AND `description` = '".str_replace("'", "\'", $description)."'
 				;".PHP_EOL;
 			}
