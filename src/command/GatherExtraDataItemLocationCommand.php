@@ -144,6 +144,7 @@ class GatherExtraDataItemLocationCommand extends Command
 			;";
 		}
 		
+		$noteQueries = [];
 		foreach ($itemLocationDataSet as $itemLocationData) {
 			$locationName = $itemLocationData['locationName'];
 			$locationAction = self::STATUS_MAPPING[$locationName] ?? self::STATUS_TEMPORARY;
@@ -188,7 +189,7 @@ class GatherExtraDataItemLocationCommand extends Command
 			;";
 			
 			if ($itemLocationData['noteText'] !== '') {
-				$itemLocationQueries[] = "
+				$noteQueries[] = "
 				    INSERT
 				      INTO `note`
 				       SET `text` = '".str_replace("'", "\'", $itemLocationData['noteText'])."',
@@ -220,8 +221,11 @@ class GatherExtraDataItemLocationCommand extends Command
 		
 		$convertedFileName = 'LendEngineItemLocation_ExtraData_'.time().'.sql';
 		file_put_contents($dataDirectory.'/'.$convertedFileName, implode(PHP_EOL, $itemLocationQueries));
-		
 		$output->writeln('<info>Done. ' . count($itemLocationQueries) . ' SQLs for item locations stored in ' . $convertedFileName . '</info>');
+		
+		$convertedFileName = 'LendEngineItemLocationNotes_ExtraData_'.time().'.sql';
+		file_put_contents($dataDirectory.'/'.$convertedFileName, implode(PHP_EOL, $noteQueries));
+		$output->writeln('<info>Done. ' . count($noteQueries) . ' SQLs for part mutation notes stored in ' . $convertedFileName . '</info>');
 		
 		return Command::SUCCESS;
 	}
