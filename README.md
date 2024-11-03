@@ -84,11 +84,11 @@ Output files `LendEngine*.csv` & `LendEngine*.sql` will be added in `data/`.
 The CSVs from the above scripts (`LendEngine*.csv` for items & contacts) can be imported via Lend Engine's CSV import admin.
 
 - Import items (Admin » Items » Bulk update)
-	- Copy the contents of `LendEngineItems_[timestamp].csv` (the output of the `convert-items` **OR** `convert-website-csvs` command).
+	- Copy the contents of `LendEngine_02_Items_[timestamp].csv` **OR** `LendEngine_02_ItemsAlternative_[timestamp].csv`.
 	- Copy quotes along (copy raw content using text editor, not the selection when opening in a spreadsheet program) to support newlines.
 	- Enable "Create new items where code is not found".
 - Import contacts (Admin » Settings » Import contacts)
-	- Copy the contents of `LendEngineContacts_[timestamp].csv` (the output of the `convert-contacts` command).
+	- Copy the contents of `LendEngine_01_Contacts_[timestamp].csv` **OR** `LendEngine_01_Contacts_[timestamp]_obfuscated_[timestamp].csv`.
 
 ### 4. Import SQLs via Lend Engine support
 

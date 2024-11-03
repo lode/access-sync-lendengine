@@ -158,7 +158,7 @@ class InsightCommand extends Command
 		
 		$output->writeln('Duplicates email: '.count($cases));
 		$output->writeln(implode(PHP_EOL, $info));
-		$output->writeln('<comment>These need to be manually corrected before/after importing in `LendEngineContacts_*.csv`.</comment>');
+		$output->writeln('<comment>These need to be manually corrected before/after importing in `LendEngine_01_Contacts_*.csv`.</comment>');
 		if ($this->getHelper('question')->ask($input, $output, new ConfirmationQuestion('<question>Debug? [y/N]</question> ', false)) === true) {
 			print_r($cases);
 		}

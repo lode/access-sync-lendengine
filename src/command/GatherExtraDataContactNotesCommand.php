@@ -91,7 +91,7 @@ class GatherExtraDataContactNotesCommand extends Command
 			;";
 		}
 		
-		$convertedFileName = 'LendEngineContactNotes_ExtraData_'.time().'.sql';
+		$convertedFileName = 'LendEngine_10_ContactNotes_ExtraData_'.time().'.sql';
 		file_put_contents($dataDirectory.'/'.$convertedFileName, implode(PHP_EOL, $contactNoteQueries));
 		
 		$output->writeln('<info>Done. ' . count($contactNoteQueries) . ' SQLs for contact notes stored in ' . $convertedFileName . '</info>');

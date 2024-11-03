@@ -17,7 +17,7 @@ class ObfuscateContactsCommand extends Command
 {
 	protected function configure(): void
 	{
-		$this->addArgument('timestamp', InputArgument::REQUIRED, 'timestamp from LendEngineContacts file in data/ directory');
+		$this->addArgument('timestamp', InputArgument::REQUIRED, 'timestamp from LendEngine_01_Contacts file in data/ directory');
 	}
 	
 	protected function execute(InputInterface $input, OutputInterface $output): int
@@ -31,7 +31,7 @@ class ObfuscateContactsCommand extends Command
 		$service->requireInputCsvs(
 			$dataDirectory,
 			[
-				'LendEngineContacts_'.$timestamp.'.csv',
+				'LendEngine_01_Contacts_'.$timestamp.'.csv',
 			],
 			$output,
 		);
@@ -47,7 +47,7 @@ class ObfuscateContactsCommand extends Command
 			'Postcode',
 			'Membership number',
 		];
-		$contactsCsvLines = $service->getExportCsv($dataDirectory.'/LendEngineContacts_'.$timestamp.'.csv', $expectedHeaders, $csvSeparator="\t");
+		$contactsCsvLines = $service->getExportCsv($dataDirectory.'/LendEngine_01_Contacts_'.$timestamp.'.csv', $expectedHeaders, $csvSeparator="\t");
 		$output->writeln('Imported ' . count($contactsCsvLines) . ' contacts');
 		
 		$output->writeln('<info>Obfuscating contacts ...</info>');
@@ -72,7 +72,7 @@ class ObfuscateContactsCommand extends Command
 			$obfuscatedCsvLines[] = $obfuscatedCsvLine;
 		}
 		
-		$convertedFileName = 'LendEngineContacts_'.$timestamp.'_obfuscated_'.time().'.csv';
+		$convertedFileName = 'LendEngine_01_Contacts_'.$timestamp.'_obfuscated_'.time().'.csv';
 		$obfuscatedCsv = $service->createImportCsv($obfuscatedCsvLines);
 		file_put_contents($dataDirectory.'/'.$convertedFileName, $obfuscatedCsv);
 		

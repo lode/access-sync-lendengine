@@ -166,7 +166,7 @@ class ConvertWebsiteCsvsCommand extends Command
 		 * create lend engine item csv
 		 */
 		$convertedCsv = $service->createImportCsv($itemsConverted);
-		$convertedFileName = 'LendEngineItemsAlternative_'.$csvTimestamp.'_'.time().'.csv';
+		$convertedFileName = 'LendEngine_02_ItemsAlternative_'.$csvTimestamp.'_'.time().'.csv';
 		file_put_contents($dataDirectory.'/'.$convertedFileName, $convertedCsv);
 		
 		$output->writeln('<info>Done. ' . count($itemsConverted) . ' items stored in ' . $convertedFileName . '</info>');

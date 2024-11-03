@@ -162,7 +162,7 @@ class GatherExtraDataItemImagesCommand extends Command
 			}
 		}
 		
-		$convertedFileName = 'LendEngineItemImages_ExtraData_'.time().'.sql';
+		$convertedFileName = 'LendEngine_05_ItemImages_ExtraData_'.time().'.sql';
 		file_put_contents($dataDirectory.'/'.$convertedFileName, implode(PHP_EOL, $itemImagesQueries));
 		
 		$output->writeln('<info>Done.</info>');

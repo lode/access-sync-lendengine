@@ -219,11 +219,11 @@ class GatherExtraDataItemLocationCommand extends Command
 			$output->writeln('- '.$count."\t".$location);
 		}
 		
-		$convertedFileName = 'LendEngineItemLocation_ExtraData_'.time().'.sql';
+		$convertedFileName = 'LendEngine_07_ItemLocation_ExtraData_'.time().'.sql';
 		file_put_contents($dataDirectory.'/'.$convertedFileName, implode(PHP_EOL, $itemLocationQueries));
 		$output->writeln('<info>Done. ' . count($itemLocationQueries) . ' SQLs for item locations stored in ' . $convertedFileName . '</info>');
 		
-		$convertedFileName = 'LendEngineItemLocationNotes_ExtraData_'.time().'.sql';
+		$convertedFileName = 'LendEngine_10_ItemLocationNotes_ExtraData_'.time().'.sql';
 		file_put_contents($dataDirectory.'/'.$convertedFileName, implode(PHP_EOL, $noteQueries));
 		$output->writeln('<info>Done. ' . count($noteQueries) . ' SQLs for part mutation notes stored in ' . $convertedFileName . '</info>');
 		

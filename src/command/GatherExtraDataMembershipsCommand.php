@@ -248,7 +248,7 @@ class GatherExtraDataMembershipsCommand extends Command
 		;";
 		
 		$allQueries = [...$membershipTypeQueries, ...$membershipQueries];
-		$convertedFileName = 'LendEngineMemberships_ExtraData_'.time().'.sql';
+		$convertedFileName = 'LendEngine_06_Memberships_ExtraData_'.time().'.sql';
 		file_put_contents($dataDirectory.'/'.$convertedFileName, implode(PHP_EOL, $allQueries));
 		
 		$output->writeln('<info>Done. ' . count($allQueries) . ' SQLs for memberships stored in ' . $convertedFileName . '</info>');

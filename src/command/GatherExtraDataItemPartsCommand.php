@@ -91,7 +91,7 @@ class GatherExtraDataItemPartsCommand extends Command
 		
 		$itemPartQueryChunks = array_chunk($itemPartQueries, 2500);
 		foreach ($itemPartQueryChunks as $index => $itemPartQueryChunk) {
-			$convertedFileName = 'LendEngineItemParts_ExtraData_'.time().'_chunk_'.($index+1).'.sql';
+			$convertedFileName = 'LendEngine_03_ItemParts_ExtraData_'.time().'_chunk_'.($index+1).'.sql';
 			file_put_contents($dataDirectory.'/'.$convertedFileName, implode(PHP_EOL, $itemPartQueryChunk));
 			
 			$output->writeln('- '.$convertedFileName);
