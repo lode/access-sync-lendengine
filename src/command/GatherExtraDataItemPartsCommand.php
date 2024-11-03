@@ -33,6 +33,7 @@ class GatherExtraDataItemPartsCommand extends Command
 			'article_id'       => 'ond_art_id',
 			'part_description' => ['ond_oms', 'ond_nadereoms'],
 			'part_count'       => 'ond_aantal',
+			'part_sort'        => 'ond_volgnr',
 		];
 		
 		$partCsvLines = $service->getExportCsv($dataDirectory.'/Onderdeel.csv', (new PartSpecification())->getExpectedHeaders());
@@ -51,6 +52,24 @@ class GatherExtraDataItemPartsCommand extends Command
 			$canonicalArticleMapping[$articleSku] = $articleId;
 		}
 		$canonicalArticleMapping = array_flip($canonicalArticleMapping);
+		
+		$partSortMapping = [];
+		foreach ($partCsvLines as $partCsvLine) {
+			$articleId = $partCsvLine[$partMapping['article_id']];
+			$csvSort   = $partCsvLine[$partMapping['part_sort']];
+			
+			if (isset($partSortMapping[$articleId]) === false) {
+				$partSortMapping[$articleId] = [];
+			}
+			
+			$partSortMapping[$articleId][] = $csvSort;
+		}
+		
+		foreach ($partSortMapping as &$sorts) {
+			sort($sorts);
+			$sorts = array_flip($sorts);
+		}
+		unset($sorts);
 		
 		$itemPartQueries = [];
 		foreach ($partCsvLines as $partCsvLine) {
@@ -71,6 +90,9 @@ class GatherExtraDataItemPartsCommand extends Command
 				$partCsvLine[$partMapping['part_description'][1]]
 			]));
 			
+			$csvSort   = $partCsvLine[$partMapping['part_sort']];
+			$cleanSort = $partSortMapping[$articleId][$csvSort] + 1;
+			
 			$itemPartQueries[] = "
 				INSERT INTO `item_part` SET
 				`item_id` = (
@@ -83,7 +105,8 @@ class GatherExtraDataItemPartsCommand extends Command
 					)
 				),
 				`description` = '".str_replace("'", "\'", $description)."',
-				`count` = '".$count."'
+				`count` = '".$count."',
+				`sort` = '".$cleanSort."'
 			;";
 		}
 		
