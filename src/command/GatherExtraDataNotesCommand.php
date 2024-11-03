@@ -117,9 +117,15 @@ class GatherExtraDataNotesCommand extends Command
 		$failures = [];
 		foreach ($messageCsvLines as $messageCsvLine) {
 			// filter on kinds meant for contacts
+			$text            = trim($messageCsvLine[$messageMapping['text']]);
 			$messageKindId   = $messageCsvLine[$messageMapping['kind_id']];
 			$messageKindName = $messageKindNameMapping[$messageKindId];
 			if ($messageKindName !== 'Lid' && $messageKindName !== 'Artikel') {
+				continue;
+			}
+			
+			// skip broken records
+			if ($text === '') {
 				continue;
 			}
 			
@@ -180,7 +186,6 @@ class GatherExtraDataNotesCommand extends Command
 				throw new \Exception('unsupported message kind');
 			}
 			
-			$text            = trim($messageCsvLine[$messageMapping['text']]);
 			$employeeId      = $messageCsvLine[$messageMapping['created_by']];
 			$responsibleId   = $employeeMapping[$employeeId];
 			$createdByNumber = $responsibleMembershipNumberMapping[$responsibleId];
