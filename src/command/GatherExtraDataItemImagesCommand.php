@@ -135,13 +135,9 @@ class GatherExtraDataItemImagesCommand extends Command
 			$itemImagesQueries[] = "
 				INSERT INTO `image` SET
 				`inventory_item_id` = (
-					SELECT IFNULL(
-						(
-							SELECT `id`
-							FROM `inventory_item`
-							WHERE `sku` = '".$articleSku."'
-						), 1000
-					)
+					SELECT `id`
+					FROM `inventory_item`
+					WHERE `sku` = '".$articleSku."'
 				),
 				`image_name` = '".$imageNewFileName."'
 			;";

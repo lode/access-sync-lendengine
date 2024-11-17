@@ -96,13 +96,9 @@ class GatherExtraDataItemPartsCommand extends Command
 			$itemPartQueries[] = "
 				INSERT INTO `item_part` SET
 				`item_id` = (
-					SELECT IFNULL(
-						(
-							SELECT `id`
-							FROM `inventory_item`
-							WHERE `sku` = '".$itemSku."'
-						), 1000
-					)
+					SELECT `id`
+					FROM `inventory_item`
+					WHERE `sku` = '".$itemSku."'
 				),
 				`description` = '".str_replace("'", "\'", $description)."',
 				`count` = '".$count."',

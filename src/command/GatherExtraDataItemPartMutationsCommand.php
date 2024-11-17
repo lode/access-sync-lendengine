@@ -416,13 +416,9 @@ class GatherExtraDataItemPartMutationsCommand extends Command
 			if ($membershipNumber !== null) {
 				$memberQuery = "
 					`contact_id` = (
-						SELECT IFNULL(
-							(
-								SELECT `id`
-								FROM `contact`
-								WHERE `membership_number` = '".$membershipNumber."'
-							), 1
-						)
+						SELECT `id`
+						FROM `contact`
+						WHERE `membership_number` = '".$membershipNumber."'
 					),
 				";
 			}
@@ -430,22 +426,14 @@ class GatherExtraDataItemPartMutationsCommand extends Command
 			$noteQueries[] = "
 				INSERT INTO `note` SET
 				`created_by` = (
-					SELECT IFNULL(
-						(
-							SELECT `id`
-							FROM `contact`
-							WHERE `membership_number` = '".$createdByNumber."'
-						), 1
-					)
+					SELECT `id`
+					FROM `contact`
+					WHERE `membership_number` = '".$createdByNumber."'
 				),
 				`inventory_item_id` = (
-					SELECT IFNULL(
-						(
-							SELECT `id`
-							FROM `inventory_item`
-							WHERE `sku` = '".$itemSku."'
-						), 1
-					)
+					SELECT `id`
+					FROM `inventory_item`
+					WHERE `sku` = '".$itemSku."'
 				),
 				{$memberQuery}
 				`created_at` = '".$noteCreatedAt->format('Y-m-d H:i:s')."',

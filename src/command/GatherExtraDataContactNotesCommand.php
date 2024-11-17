@@ -76,13 +76,9 @@ class GatherExtraDataContactNotesCommand extends Command
 			$contactNoteQueries[] = "
 				INSERT INTO `note` SET
 				`contact_id` = (
-					SELECT IFNULL(
-						(
-							SELECT `id`
-							FROM `contact`
-							WHERE `membership_number` = '".$membershipNumber."'
-						), 1
-					)
+					SELECT `id`
+					FROM `contact`
+					WHERE `membership_number` = '".$membershipNumber."'
 				),
 				`created_at` = '".$responsibleCreated->format('Y-m-d H:i:s')."',
 				`text` = '".str_replace("'", "\'", $text)."',

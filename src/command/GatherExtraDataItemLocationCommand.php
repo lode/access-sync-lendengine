@@ -176,13 +176,9 @@ class GatherExtraDataItemLocationCommand extends Command
 			    INSERT
 			      INTO `item_movement`
 			       SET `inventory_item_id` = (
-			               SELECT IFNULL(
-			                      (
-			                          SELECT `id`
-			                            FROM `inventory_item`
-			                           WHERE `sku` = '".$itemLocationData['itemSku']."'
-			                      ), 1000
-			               )
+                           SELECT `id`
+                             FROM `inventory_item`
+                            WHERE `sku` = '".$itemLocationData['itemSku']."'
 			           ),
 			           `inventory_location_id` = @locationId,
 			           `created_at` = '".$itemLocationData['logCreatedAt']->format('Y-m-d H:i:s')."'
@@ -194,13 +190,9 @@ class GatherExtraDataItemLocationCommand extends Command
 				      INTO `note`
 				       SET `text` = '".str_replace("'", "\'", $itemLocationData['noteText'])."',
 				           `inventory_item_id` = (
-				               SELECT IFNULL(
-				                      (
-				                          SELECT `id`
-				                            FROM `inventory_item`
-				                           WHERE `sku` = '".$itemLocationData['itemSku']."'
-				                      ), 1000
-				               )
+	                           SELECT `id`
+	                             FROM `inventory_item`
+	                            WHERE `sku` = '".$itemLocationData['itemSku']."'
 				           ),
 				           `created_at` = '".$itemLocationData['logCreatedAt']->format('Y-m-d H:i:s')."'
 				;";

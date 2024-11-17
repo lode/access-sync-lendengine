@@ -144,13 +144,9 @@ class GatherExtraDataNotesCommand extends Command
 				
 				$relationQuery = "
 					`contact_id` = (
-						SELECT IFNULL(
-							(
-								SELECT `id`
-								FROM `contact`
-								WHERE `membership_number` = '".$membershipNumber."'
-							), 1
-						)
+						SELECT `id`
+						FROM `contact`
+						WHERE `membership_number` = '".$membershipNumber."'
 					),
 				";
 			}
@@ -172,13 +168,9 @@ class GatherExtraDataNotesCommand extends Command
 				
 				$relationQuery = "
 					`inventory_item_id` = (
-						SELECT IFNULL(
-							(
-								SELECT `id`
-								FROM `inventory_item`
-								WHERE `sku` = '".$articleSku."'
-							), 1000
-						)
+						SELECT `id`
+						FROM `inventory_item`
+						WHERE `sku` = '".$articleSku."'
 					),
 				";
 			}
@@ -211,13 +203,9 @@ class GatherExtraDataNotesCommand extends Command
 			$noteQueries[] = "
 				INSERT INTO `note` SET
 				`created_by` = (
-					SELECT IFNULL(
-						(
-							SELECT `id`
-							FROM `contact`
-							WHERE `membership_number` = '".$createdByNumber."'
-						), 1
-					)
+					SELECT `id`
+					FROM `contact`
+					WHERE `membership_number` = '".$createdByNumber."'
 				),
 				{$relationQuery}
 				`created_at` = '".$createdAt->format('Y-m-d H:i:s')."',
