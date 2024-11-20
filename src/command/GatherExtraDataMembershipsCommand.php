@@ -20,6 +20,10 @@ use Symfony\Component\Console\Output\OutputInterface;
 #[AsCommand(name: 'gather-extra-data-memberships')]
 class GatherExtraDataMembershipsCommand extends Command
 {
+	private const MEMBER_STATUS_ACTIVE   = '1';
+	private const MEMBER_STATUS_CANCELED = '2';
+	private const MEMBER_STATUS_INACTIVE = '3';
+	
 	private const CATEGORY_MEMBERSHIP = 'Leenkosten';
 	private const CATEGORY_STRIP_CARD = 'Knipkaart';
 	private const KNOWN_CATEGORIES = [
@@ -67,8 +71,10 @@ class GatherExtraDataMembershipsCommand extends Command
 		$output->writeln('Imported ' . count($tariffPeriodCsvLines) . ' tariff periods');
 		
 		$memberMapping = [
+			'is_active'         => 'lid_lis_id',
 			'starts_at'         => 'lid_vanafdatum',
-			'expires_at'        => 'lid_einddatum',
+			'canceled_at'       => 'lid_einddatum',
+			'expires_at'        => 'lid_contributietot',
 			'membership_id'     => 'lid_lit_id',
 			'membership_number' => 'lid_key',
 		];
@@ -204,19 +210,27 @@ class GatherExtraDataMembershipsCommand extends Command
 		}
 		
 		foreach ($memberCsvLines as $memberCsvLine) {
+			$memberStatusId = $memberCsvLine[$memberMapping['is_active']];
+			if ($memberStatusId !== self::MEMBER_STATUS_ACTIVE) {
+				continue;
+			}
+			
 			$membershipTypeId = $memberCsvLine[$memberMapping['membership_id']];
 			$membershipNumber = $memberCsvLine[$memberMapping['membership_number']];
 			$membershipPrice  = $membershipPriceMapping[$membershipTypeId];
 			$startsAt         = \DateTime::createFromFormat('Y-n-j H:i:s', $memberCsvLine[$memberMapping['starts_at']]);
-			$expiresAt        = null;
-			if ($memberCsvLine[$memberMapping['expires_at']] !== '') {
-				$expiresAt = \DateTime::createFromFormat('Y-n-j H:i:s', $memberCsvLine[$memberMapping['expires_at']]);
-			}
-			else {
-				$expiresAt = clone $startsAt;
-				$expiresAt->modify('+1 year');
+			$expiresAt        = \DateTime::createFromFormat('Y-n-j H:i:s', $memberCsvLine[$memberMapping['expires_at']]);
+			if ($memberCsvLine[$memberMapping['canceled_at']] !== '') {
+				$canceledAt = \DateTime::createFromFormat('Y-n-j H:i:s', $memberCsvLine[$memberMapping['canceled_at']]);
+				if ($canceledAt < $expiresAt) {
+					$expiresAt = $canceledAt;
+				}
 			}
 			
+			// @todo improve using member 238 (Broers, Otis en Mees [Bakkerstraat, Hilversum 82])
+			// - start: 2021-11-6 11:38:49
+			// - contributie: 2024-11-6 00:00:00
+			// - eind: 2024-10-23 00:00:00
 			$status = ($expiresAt < new \DateTime()) ? 'EXPIRED' : 'ACTIVE';
 			
 			$membershipQueries[] = "
