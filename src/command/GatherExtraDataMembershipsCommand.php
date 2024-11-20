@@ -227,10 +227,6 @@ class GatherExtraDataMembershipsCommand extends Command
 				}
 			}
 			
-			// @todo improve using member 238 (Broers, Otis en Mees [Bakkerstraat, Hilversum 82])
-			// - start: 2021-11-6 11:38:49
-			// - contributie: 2024-11-6 00:00:00
-			// - eind: 2024-10-23 00:00:00
 			$status = ($expiresAt < new \DateTime()) ? 'EXPIRED' : 'ACTIVE';
 			
 			$membershipQueries[] = "
