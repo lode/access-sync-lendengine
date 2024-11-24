@@ -29,6 +29,9 @@ class GatherExtraDataItemPartMutationsCommand extends Command
 	private const string DEFAULT_EXPLANATION_MISSING = 'kwijt';
 	private const string DEFAULT_EXPLANATION_BROKEN  = 'kapot';
 	
+	// synced from LendEngine, to allow matching in reports
+	private const string PART_SUMMARY_PREFIX = 'Part changes:' . PHP_EOL;
+	
 	protected function execute(InputInterface $input, OutputInterface $output): int
 	{
 		$service = new ConvertCsvService();
@@ -410,7 +413,7 @@ class GatherExtraDataItemPartMutationsCommand extends Command
 					$mutationExplanation = '1 '.self::DEFAULT_EXPLANATION_MISSING;
 				}
 			}
-			$noteText = 'Part "'.$partDescription.'" changed: '.$mutationExplanation;
+			$noteText = self::PART_SUMMARY_PREFIX . '- '.$partDescription.', '.$mutationExplanation;
 			
 			$memberQuery = "";
 			if ($membershipNumber !== null) {
