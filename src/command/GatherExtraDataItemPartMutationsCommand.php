@@ -375,7 +375,8 @@ class GatherExtraDataItemPartMutationsCommand extends Command
 			$itemSku          = $partRelatedDataMapping[$partId]['itemSku'];
 			$memberId         = $partMutationCsvLine[$partMutationMapping['mutation_member_id']];
 			$membershipNumber = $membershipNumberMapping[$memberId] ?? null;
-			$noteCreatedAt    = \DateTime::createFromFormat('Y-n-j H:i:s', $partMutationCsvLine[$partMutationMapping['note_created']]);
+			$noteCreatedAt    = \DateTime::createFromFormat('Y-n-j H:i:s', $partMutationCsvLine[$partMutationMapping['note_created']], new \DateTimeZone('Europe/Amsterdam'));
+			$noteCreatedAt->setTimezone(new \DateTimeZone('UTC'));
 			
 			// created by
 			$employeeId       = $partMutationCsvLine[$partMutationMapping['note_contact_id']];
@@ -385,11 +386,13 @@ class GatherExtraDataItemPartMutationsCommand extends Command
 			// close it directly?
 			$noteClosedFields = array_intersect_key($partMutationCsvLine, array_flip($partMutationMapping['note_closed'])); // ['onm_corr_datum', 'onm_definitiefdatum'],
 			if ($type === self::TYPE_FOUND_OR_REPAIRED) {
-				$noteClosedAt = \DateTime::createFromFormat('Y-n-j H:i:s', $noteClosedFields['onm_corr_datum']);
+				$noteClosedAt = \DateTime::createFromFormat('Y-n-j H:i:s', $noteClosedFields['onm_corr_datum'], new \DateTimeZone('Europe/Amsterdam'));
+				$noteClosedAt->setTimezone(new \DateTimeZone('UTC'));
 				$noteStatus = 'closed';
 			}
 			elseif ($type === self::TYPE_PERMANENTLY_GONE) {
-				$noteClosedAt = \DateTime::createFromFormat('Y-n-j H:i:s', $noteClosedFields['onm_definitiefdatum']);
+				$noteClosedAt = \DateTime::createFromFormat('Y-n-j H:i:s', $noteClosedFields['onm_definitiefdatum'], new \DateTimeZone('Europe/Amsterdam'));
+				$noteClosedAt->setTimezone(new \DateTimeZone('UTC'));
 				$noteStatus = 'closed';
 			}
 			elseif ($membershipNumber !== null) {

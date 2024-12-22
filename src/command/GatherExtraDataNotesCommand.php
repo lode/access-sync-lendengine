@@ -186,7 +186,8 @@ class GatherExtraDataNotesCommand extends Command
 			if ($createdAt === '') {
 				$createdAt = $messageCsvLine[$messageMapping['created_at'][1]];
 			}
-			$createdAt = \DateTime::createFromFormat('Y-n-j H:i:s', $createdAt);
+			$createdAt = \DateTime::createFromFormat('Y-n-j H:i:s', $createdAt, new \DateTimeZone('Europe/Amsterdam'));
+			$createdAt->setTimezone(new \DateTimeZone('UTC'));
 			
 			if ($messageCsvLine[$messageMapping['status_closed']] !== '') {
 				$status = "'closed'";

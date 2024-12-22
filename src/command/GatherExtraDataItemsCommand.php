@@ -59,7 +59,8 @@ class GatherExtraDataItemsCommand extends Command
 			}
 			
 			$showOnWebsite = (bool) $articleCsvLine[$articleMapping['show_on_website']];
-			$createdAt     = \DateTime::createFromFormat('Y-n-j H:i:s', $articleCsvLine[$articleMapping['created_at']]);
+			$createdAt     = \DateTime::createFromFormat('Y-n-j H:i:s', $articleCsvLine[$articleMapping['created_at']], new \DateTimeZone('Europe/Amsterdam'));
+			$createdAt->setTimezone(new \DateTimeZone('UTC'));
 			$updatedAt     = $createdAt;
 			
 			$itemQueries[] = "

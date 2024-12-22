@@ -218,16 +218,19 @@ class GatherExtraDataMembershipsCommand extends Command
 			$membershipTypeId = $memberCsvLine[$memberMapping['membership_id']];
 			$membershipNumber = $memberCsvLine[$memberMapping['membership_number']];
 			$membershipPrice  = $membershipPriceMapping[$membershipTypeId];
-			$startsAt         = \DateTime::createFromFormat('Y-n-j H:i:s', $memberCsvLine[$memberMapping['starts_at']]);
-			$expiresAt        = \DateTime::createFromFormat('Y-n-j H:i:s', $memberCsvLine[$memberMapping['expires_at']]);
+			$startsAt         = \DateTime::createFromFormat('Y-n-j H:i:s', $memberCsvLine[$memberMapping['starts_at']], new \DateTimeZone('Europe/Amsterdam'));
+			$expiresAt        = \DateTime::createFromFormat('Y-n-j H:i:s', $memberCsvLine[$memberMapping['expires_at']], new \DateTimeZone('Europe/Amsterdam'));
 			if ($memberCsvLine[$memberMapping['canceled_at']] !== '') {
-				$canceledAt = \DateTime::createFromFormat('Y-n-j H:i:s', $memberCsvLine[$memberMapping['canceled_at']]);
+				$canceledAt = \DateTime::createFromFormat('Y-n-j H:i:s', $memberCsvLine[$memberMapping['canceled_at']], new \DateTimeZone('Europe/Amsterdam'));
 				if ($canceledAt < $expiresAt) {
 					$expiresAt = $canceledAt;
 				}
 			}
 			
-			$status = ($expiresAt < new \DateTime()) ? 'EXPIRED' : 'ACTIVE';
+			$startsAt->setTimezone(new \DateTimeZone('UTC'));
+			$expiresAt->setTimezone(new \DateTimeZone('UTC'));
+			
+			$status = ($expiresAt < new \DateTime('now', new \DateTimeZone('Europe/Amsterdam'))) ? 'EXPIRED' : 'ACTIVE';
 			
 			$membershipQueries[] = "
 				INSERT INTO `membership` SET

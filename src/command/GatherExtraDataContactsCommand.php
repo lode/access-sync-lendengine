@@ -67,7 +67,8 @@ class GatherExtraDataContactsCommand extends Command
 			}
 			
 			$membershipNumber = $membershipNumberMapping[$responsibleId];
-			$createdAt        = \DateTime::createFromFormat('Y-n-j H:i:s', $responsibleCsvLine[$responsibleMapping['created_at']]);
+			$createdAt        = \DateTime::createFromFormat('Y-n-j H:i:s', $responsibleCsvLine[$responsibleMapping['created_at']], new \DateTimeZone('Europe/Amsterdam'));
+			$createdAt->setTimezone(new \DateTimeZone('UTC'));
 			
 			$contactQueries[] = "
 				UPDATE `contact` SET

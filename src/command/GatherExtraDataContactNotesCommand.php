@@ -71,7 +71,8 @@ class GatherExtraDataContactNotesCommand extends Command
 			
 			$membershipNumber   = $membershipNumberMapping[$responsibleId];
 			$responsibleCreated = $responsibleCsvLine[$responsibleMapping['created_at']];
-			$responsibleCreated = \DateTime::createFromFormat('Y-n-j H:i:s', $responsibleCreated);
+			$responsibleCreated = \DateTime::createFromFormat('Y-n-j H:i:s', $responsibleCreated, new \DateTimeZone('Europe/Amsterdam'));
+			$responsibleCreated->setTimezone(new \DateTimeZone('UTC'));
 			
 			$contactNoteQueries[] = "
 				INSERT INTO `note` SET

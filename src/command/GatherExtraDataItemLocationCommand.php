@@ -103,7 +103,8 @@ class GatherExtraDataItemLocationCommand extends Command
 			$itemSku      = $canonicalArticleMapping[$itemId];
 			$locationId   = $articleStatusLoggingCsvLine[$articleStatusLoggingMapping['location_id']];
 			$locationName = $locationMapping[$locationId];
-			$logCreatedAt = \DateTime::createFromFormat('Y-n-j H:i:s', $articleStatusLoggingCsvLine[$articleStatusLoggingMapping['created_at']]);
+			$logCreatedAt = \DateTime::createFromFormat('Y-n-j H:i:s', $articleStatusLoggingCsvLine[$articleStatusLoggingMapping['created_at']], new \DateTimeZone('Europe/Amsterdam'));
+			$logCreatedAt->setTimezone(new \DateTimeZone('UTC'));
 			$noteText     = trim($articleStatusLoggingCsvLine[$articleStatusLoggingMapping['note_text']]);
 			
 			// only keep the last location for a certain sku
