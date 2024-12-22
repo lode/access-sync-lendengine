@@ -86,7 +86,7 @@ class ConvertWebsiteCsvsCommand extends Command
 			'Code'              => 'Referentie',
 			'Name'              => 'Naam',
 			'Short description' => null,
-			'Long description'  => ['Omschrijving', 'Kenmerk_Naam_Waarde'],
+			'Full description'  => ['Omschrijving', 'Kenmerk_Naam_Waarde'],
 			'Components'        => 'Omschrijving',
 			'Condition'         => null,
 			'Category'          => 'CategoryId',
@@ -133,19 +133,19 @@ class ConvertWebsiteCsvsCommand extends Command
 			preg_match('{<p>(Aantal onderdelen: [0-9]+)</p>}', $itemConverted['Components'], $matches);
 			$itemConverted['Components'] = $matches[1];
 			// gather description
-			$longDescriptionValues = $itemConverted['Long description'];
-			$itemConverted['Long description'] = '';
+			$longDescriptionValues = $itemConverted['Full description'];
+			$itemConverted['Full description'] = '';
 			preg_match('{^<p>(?<description>[^-]+)</p><p></p><p>(Aantal onderdelen: [0-9]+)?</p>}', $longDescriptionValues['Omschrijving'], $matches);
 			if (isset($matches['description'])) {
-				#$itemConverted['Long description'] .= str_replace('</p><p>', PHP_EOL, $matches['description']);
-				$itemConverted['Long description'] .= '<p>'.$matches['description'].'</p>';
+				#$itemConverted['Full description'] .= str_replace('</p><p>', PHP_EOL, $matches['description']);
+				$itemConverted['Full description'] .= '<p>'.$matches['description'].'</p>';
 			}
 			if ($longDescriptionValues['Kenmerk_Naam_Waarde'] !== 'Leeftijd: Onbekend') {
-				#if ($itemConverted['Long description'] !== '') {
-				#    $itemConverted['Long description'] .= PHP_EOL.PHP_EOL;
+				#if ($itemConverted['Full description'] !== '') {
+				#    $itemConverted['Full description'] .= PHP_EOL.PHP_EOL;
 				#}
-				#$itemConverted['Long description'] .= $longDescriptionValues['Kenmerk_Naam_Waarde'];
-				$itemConverted['Long description'] .= '<p>'.$longDescriptionValues['Kenmerk_Naam_Waarde'].'</p>';
+				#$itemConverted['Full description'] .= $longDescriptionValues['Kenmerk_Naam_Waarde'];
+				$itemConverted['Full description'] .= '<p>'.$longDescriptionValues['Kenmerk_Naam_Waarde'].'</p>';
 			}
 			// category name
 			if (substr_count($itemConverted['Category'], ',') === 1) {

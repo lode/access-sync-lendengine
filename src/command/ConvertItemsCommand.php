@@ -43,11 +43,11 @@ class ConvertItemsCommand extends Command
 		$articleMapping = [
 			'art_key'           => 'Code',
 			'art_naam'          => 'Name',
-			'art_oms'           => 'Long description',
+			'art_oms'           => 'Full description',
 			'art_att_id'        => 'Category',
 			'art_mrk_id'        => 'Brand',
 			'art_prijs'         => 'Price paid',
-			'art_aud_id'        => 'Override loan period',
+			'art_aud_id'        => 'Per',
 			'art_reserveerbaar' => 'Reservable',
 		];
 		
@@ -107,16 +107,16 @@ class ConvertItemsCommand extends Command
 			}
 			
 			$itemConverted = [
-				'Code'                 => null,
-				'Type'                 => 'loan',
-				'Name'                 => null,
-				'Long description'     => null,
-				'Condition'            => 'B - Fair',
-				'Category'             => null,
-				'Brand'                => null,
-				'Price paid'           => null,
-				'Override loan period' => null,
-				'Reservable'           => null,
+				'Code'             => null,
+				'Type'             => 'loan',
+				'Name'             => null,
+				'Full description' => null,
+				'Condition'        => 'B - Fair',
+				'Category'         => null,
+				'Brand'            => null,
+				'Price paid'       => null,
+				'Per'              => null,
+				'Reservable'       => null,
 			];
 			
 			/**
@@ -148,12 +148,12 @@ class ConvertItemsCommand extends Command
 				$itemConverted['Price paid'] = null;
 			}
 			
-			// override loan period, clear default loan period, collection relation for other
-			if ($itemConverted['Override loan period'] === '1') {
-				$itemConverted['Override loan period'] = null;
+			// value for loan period, clear default loan period, collection relation for other
+			if ($itemConverted['Per'] === '1') {
+				$itemConverted['Per'] = null;
 			}
 			else {
-				$itemConverted['Override loan period'] = (int) $articleLendPeriodMapping[$itemConverted['Override loan period']];
+				$itemConverted['Per'] = (int) $articleLendPeriodMapping[$itemConverted['Per']];
 			}
 			
 			// reservable boolean
