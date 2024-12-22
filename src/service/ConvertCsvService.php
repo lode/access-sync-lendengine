@@ -122,6 +122,8 @@ class ConvertCsvService {
 	
 	public function createExportSqls(OutputInterface $output, string $dataDirectory, string $fileName, array $queries, string $description): void
 	{
+		$importConfig = 'SET NAMES utf8mb4 COLLATE utf8mb4_unicode_ci;';
+		
 		$limit = 2500;
 		if (count($queries) > $limit) {
 			$output->writeln('<info>Done. ' . count($queries) . ' SQLs for '.$description.' stored in:</info>');
@@ -150,14 +152,14 @@ class ConvertCsvService {
 			
 			foreach ($chunks as $index => $chunk) {
 				$convertedFileName = 'LendEngine_'.$fileName.'_'.time().'_chunk_'.($index+1).'.sql';
-				file_put_contents($dataDirectory.'/'.$convertedFileName, implode(PHP_EOL, $chunk));
+				file_put_contents($dataDirectory.'/'.$convertedFileName, $importConfig.PHP_EOL.implode(PHP_EOL, $chunk));
 				
 				$output->writeln('- '.$convertedFileName);
 			}
 		}
 		else {
 			$convertedFileName = 'LendEngine_'.$fileName.'_'.time().'.sql';
-			file_put_contents($dataDirectory.'/'.$convertedFileName, implode(PHP_EOL, $queries));
+			file_put_contents($dataDirectory.'/'.$convertedFileName, $importConfig.PHP_EOL.implode(PHP_EOL, $queries));
 			$output->writeln('<info>Done. ' . count($queries) . ' SQLs for '.$description.' stored in ' . $convertedFileName . '</info>');
 		}
 	}
