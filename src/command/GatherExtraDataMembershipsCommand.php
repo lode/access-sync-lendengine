@@ -179,10 +179,8 @@ class GatherExtraDataMembershipsCommand extends Command
 			}
 			
 			$duration = 0;
-			$discount = 0;
 			if ($category === self::CATEGORY_MEMBERSHIP) {
 				$duration = round($tariff['count'] * self::TARIFF_UNITS[$tariff['unit']]);
-				$discount = 100.00;
 			}
 			
 			$output->write('Membership type: "'.$name.'" ('.$tariff['category'].'), mapped to '.$category);
@@ -194,7 +192,7 @@ class GatherExtraDataMembershipsCommand extends Command
 			    `name`       = '".$name."',
 			    `price`      = ".$price.",
 			    `duration`   = ".$duration.",
-			    `discount`   = ".$discount.",
+			    `discount`   = 0,
 			    `created_at` = NOW(),
 			    `self_serve` = 0,
 			    `max_items`  = ".$max.",
