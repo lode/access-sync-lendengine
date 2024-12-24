@@ -6,6 +6,7 @@ namespace Lode\AccessSyncLendEngine\command;
 
 use Lode\AccessSyncLendEngine\service\ConvertCsvService;
 use Lode\AccessSyncLendEngine\specification\ArticleSpecification;
+use Spatie\ImageOptimizer\OptimizerChainFactory;
 use Symfony\Component\Console\Attribute\AsCommand;
 use Symfony\Component\Console\Command\Command;
 use Symfony\Component\Console\Helper\ProgressBar;
@@ -197,6 +198,9 @@ class GatherExtraDataItemImagesCommand extends Command
 		$gdImageOriginal = imagecreatefromjpeg($originalPath);
 		imagecopyresampled($gdImageNew, $gdImageOriginal, $offsetX, $offsetY, 0, 0, $newWidth, $newHeight, $originalWidth, $originalHeight);
 		copy($originalPath, $newPath);
-		imagejpeg($gdImageNew, $newPath, quality: 95);
+		imagejpeg($gdImageNew, $newPath, quality: 100);
+		
+		$optimizerChain = OptimizerChainFactory::create();
+		$optimizerChain->optimize($newPath);
 	}
 }

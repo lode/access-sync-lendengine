@@ -16,6 +16,7 @@
     "require": {
         "symfony/console": "^7.0",
         "fakerphp/faker": "^1.23",
-        "symfony/var-dumper": "^7.1"
+        "symfony/var-dumper": "^7.1",
+        "spatie/image-optimizer": "^1.8"
     }
 }

@@ -12,13 +12,17 @@ RUN echo "creating user with UID=${USER_ID} AND GID=${GROUP_ID}"
 RUN useradd -u ${USER_ID} -g ${GROUP_ID} -d /home/developer -g developers -m -s /bin/bash developer 2>/dev/null
 
 RUN apt-get update \
-    && apt-get -y --no-install-recommends install \
-        git \ 
-        php8.3-gd \ 
-        php8.3-intl \ 
-        php8.3-mysql \
-    && apt-get clean \
-    && rm -rf /var/lib/apt/lists/* /tmp/* /var/tmp/* /usr/share/doc/*
+	&& apt-get -y --no-install-recommends install \
+		git \ 
+		php8.3-gd \ 
+		php8.3-intl \ 
+		php8.3-mysql \
+		jpegoptim \
+		optipng \
+		pngquant \
+		gifsicle \
+	&& apt-get clean \
+	&& rm -rf /var/lib/apt/lists/* /tmp/* /var/tmp/* /usr/share/doc/*
 
 RUN sed -i "s/user = www-data/user = developer/g" /etc/php/8.3/fpm/pool.d/www.conf
 RUN sed -i "s/group = www-data/group = developers/g" /etc/php/8.3/fpm/pool.d/www.conf
