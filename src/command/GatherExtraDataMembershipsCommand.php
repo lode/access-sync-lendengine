@@ -165,10 +165,11 @@ class GatherExtraDataMembershipsCommand extends Command
 			$tariffId = $membershipTypeCsvLine[$membershipTypeMapping['type_tariff']];
 			$tariff   = $tariffDetails[$tariffId];
 			
-			$name   = $membershipTypeCsvLine[$membershipTypeMapping['type_name']].' '.($tariff['name'] ?? $tariff['code']);
-			$price  = str_replace(',', '.', $tariff['price']);
-			$max    = $membershipTypeCsvLine[$membershipTypeMapping['type_max_items']];
-			$active = $membershipTypeCsvLine[$membershipTypeMapping['type_active']];
+			$name        = $membershipTypeCsvLine[$membershipTypeMapping['type_name']];
+			$description = $tariff['name'] ?? $tariff['code'];
+			$price       = str_replace(',', '.', $tariff['price']);
+			$max         = $membershipTypeCsvLine[$membershipTypeMapping['type_max_items']];
+			$active      = $membershipTypeCsvLine[$membershipTypeMapping['type_active']];
 			
 			if (in_array($tariff['category'], self::KNOWN_CATEGORIES, strict: true) === false) {
 				$category = self::CATEGORY_MEMBERSHIP;
@@ -188,15 +189,16 @@ class GatherExtraDataMembershipsCommand extends Command
 			
 			$membershipTypeQueries[] = "
 			    INSERT INTO `membership_type` SET
-			    `created_by` = 1,
-			    `name`       = '".$name."',
-			    `price`      = ".$price.",
-			    `duration`   = ".$duration.",
-			    `discount`   = 0,
-			    `created_at` = NOW(),
-			    `self_serve` = 0,
-			    `max_items`  = ".$max.",
-			    `is_active`  = ".$active."
+			    `created_by`  = 1,
+			    `name`        = '".$name."',
+			    `description` = '".$description."',
+			    `price`       = ".$price.",
+			    `duration`    = ".$duration.",
+			    `discount`    = 0,
+			    `created_at`  = NOW(),
+			    `self_serve`  = 0,
+			    `max_items`   = ".$max.",
+			    `is_active`   = ".$active."
 			;";
 			$membershipTypeQueries[] = "
 			    SET @membershipType".$membershipTypeId." = (
