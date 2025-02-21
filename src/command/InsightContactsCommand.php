@@ -22,8 +22,8 @@ use Symfony\Component\Console\Question\ConfirmationQuestion;
  * - contacts without email address
  */
 
-#[AsCommand(name: 'insight')]
-class InsightCommand extends Command
+#[AsCommand(name: 'insight-contacts')]
+class InsightContactsCommand extends Command
 {
 	protected function execute(InputInterface $input, OutputInterface $output): int
 	{

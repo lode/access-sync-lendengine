@@ -62,7 +62,7 @@ Each script migrates a part of the data, you can choose which to run and do a ma
 
 | Data | Command | Contents |
 | --- | --- | --- |
-| Get insight | `insight` | Contacts without email address and contacts which share an email address.<br>Alter email addresses in the following export to prevent duplicates when importing. |
+| Get insight in contacts | `insight-contacts` | Contacts without email address and contacts which share an email address.<br>Alter email addresses in the following export to prevent duplicates when importing. |
 | Contacts | `convert-contacts` | Contact basics: name, email, phone, address, membership number, etc. |
 | Items | `convert-items` | Item basics: name, code, category, brand, price, etc. |
 | Items alternative | `convert-website-csvs [csvTimestamp]` | Item basics, alternative method with webcatalogus CSVs. |
@@ -76,12 +76,14 @@ Each script migrates a part of the data, you can choose which to run and do a ma
 | Items extras | `gather-extra-data-items` | Item created, show on catalogus. |
 | Contacts extras | `gather-extra-data-contacts` | Contact created. |
 | Contacts obfuscation | `obfuscate-contacts [timestamp]` | Obfuscate contact migration so it can be used to test with. |
+| Item warnings | `insight-warnings` | Items with warnings, insight for manual import. |
 
 Here's all the commands after each other.
 Run them one-by-one as some are not needed for your use case, and some have interactive output.
 
 ```bash
-./script/console ./script/command insight
+./script/console ./script/command insight-contacts
+./script/console ./script/command insight-warnings
 ./script/console ./script/command convert-contacts
 ./script/console ./script/command convert-items
 ./script/console ./script/command convert-website-csvs [csvTimestamp]
@@ -151,10 +153,10 @@ Here's how the concepts are mapped between Access and Lend Engine:
 | "Controle" | Check in prompt |
 | "Uitleen-info" | Item field or Custom field |
 
-Go through all items to manually migrate item warnings.
-
-- Open an article in Access and go to the warning tab ("Waarschuwingen").
-- Open the same in Lend Engine (Admin » Items » Browse items).
+- Run the `insight-warnings` command and open the resulting CSVs.
+- Use the `WarningsWithItems` CSV to find items beloging to a generic type of warning.
+- Use the `ItemsWithWarnings` CSV to go through items which have warnings.
+- Open the item in Lend Engine (Admin » Items » Browse items).
 - If you see a warning that you don't have a generic type for yet: create a generic type (Admin » Settings » Check out prompts / Check in prompts / Item fields).
 - Afterwards (or when you're importing a warning that you already have a generic type for): connect a generic type to a specific item (Check in/out / Custom fields).
 
