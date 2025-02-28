@@ -4,6 +4,11 @@ set -e
 SCRIPT_DIR="$( cd "$( dirname "${BASH_SOURCE[0]}" )" &> /dev/null && pwd )"
 cd $SCRIPT_DIR/..
 
+if test -f /.dockerenv; then
+    echo 'run this script outside docker'
+    exit 1
+fi
+
 ENVIRONMENT_FILES="--env-file docker.env.dist --env-file docker.env"
 
 docker compose $ENVIRONMENT_FILES up --detach --wait "$@"

@@ -4,6 +4,11 @@ set -e
 SCRIPT_DIR="$( cd "$( dirname "${BASH_SOURCE[0]}" )" &> /dev/null && pwd )"
 cd $SCRIPT_DIR/..
 
+if test -f /.dockerenv; then
+    echo 'run this script outside docker'
+    exit 1
+fi
+
 # create .env file if it doesn't exist
 if test ! -f ./docker.env; then
     echo "creating docker.env file"
@@ -14,7 +19,7 @@ ENVIRONMENT_FILES="--env-file docker.env.dist --env-file docker.env"
 
 # get the host's user id to sync with the docker's user id
 EGID=$(id -g $EUID)
-if [[ $EUID == 0 ]]; then
+if test $EUID == 0; then
    echo "don't run this as root, else all files inside Docker will be inaccessible to your local user " 1>&2
    exit 1
 fi

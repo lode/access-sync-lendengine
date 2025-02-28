@@ -4,10 +4,22 @@ set -e
 SCRIPT_DIR="$( cd "$( dirname "${BASH_SOURCE[0]}" )" &> /dev/null && pwd )"
 cd $SCRIPT_DIR/..
 
-ENVIRONMENT_FILES="--env-file docker.env.dist --env-file docker.env"
+if test -f /.dockerenv; then
+	echo 'run this script outside docker'
+	exit 1
+fi
 
-if [[ $# -eq 0 ]]; then
+ENVIRONMENT_FILES="--env-file docker.env.dist --env-file docker.env"
+COMMAND=()
+
+if test "$#" -gt 0; then
+	COMMAND=("$@")
+fi
+
+if test "$1" = "root"; then
+	docker compose $ENVIRONMENT_FILES exec php-fpm bash
+elif test ${#COMMAND[@]} -eq 0; then
 	docker compose $ENVIRONMENT_FILES exec --user developer php-fpm bash
 else
-	docker compose $ENVIRONMENT_FILES exec --user developer php-fpm "$@"
+	docker compose $ENVIRONMENT_FILES exec --user developer php-fpm "${COMMAND[@]}"
 fi
