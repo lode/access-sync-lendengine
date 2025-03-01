@@ -32,6 +32,7 @@ class GatherExtraDataMembershipsCommand extends Command
 	];
 	private const TARIFF_UNITS = [
 		'Maand' => 30.416666667,
+		'Jaar' => 365,
 	];
 	
 	protected function execute(InputInterface $input, OutputInterface $output): int
