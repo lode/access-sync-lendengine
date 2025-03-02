@@ -46,6 +46,7 @@ class ObfuscateContactsCommand extends Command
 			'State',
 			'Postcode',
 			'Membership number',
+			'Can log in',
 		];
 		$contactsCsvLines = $service->getExportCsv($dataDirectory.'/LendEngine_01_Contacts_'.$timestamp.'.csv', $expectedHeaders, $csvSeparator="\t");
 		$output->writeln('Imported ' . count($contactsCsvLines) . ' contacts');

@@ -22,6 +22,10 @@ class ConvertContactsCommand extends Command
 	private const MEMBER_STATUS_CANCELED = '2';
 	private const MEMBER_STATUS_INACTIVE = '3';
 	
+	// whether or not to allow login after imported in Lend Engine
+	// when false no login link will be added to transactional emails
+	private const ALLOW_LOGIN = true;
+	
 	protected function execute(InputInterface $input, OutputInterface $output): int
 	{
 		$service = new ConvertCsvService();
@@ -140,6 +144,7 @@ class ConvertContactsCommand extends Command
 				'State'             => '-',
 				'Postcode'          => null,
 				'Membership number' => null,
+				'Can log in'        => (self::ALLOW_LOGIN === true) ? '1' : '0',
 			];
 			
 			/**
