@@ -45,12 +45,12 @@ class ConvertContactsCommand extends Command
 			'vrw_achternaam'     => 'Last name',
 			'vrw_voornaam'       => 'First name',
 			'vrw_tussenvoegsel'  => 'Last name',
-			'vrw_str_id'         => 'Address line 1',
-			'vrw_huisnr'         => 'Address line 1',
+			'vrw_str_id'         => 'Address',
+			'vrw_huisnr'         => 'Address',
 			'vrw_postcode'       => 'Postcode',
 			'vrw_telefoonnr'     => 'Telephone',
 			'vrw_mobieltelnr'    => 'Telephone',
-			'vrw_email'          => 'Email',
+			'vrw_email'          => 'Email address',
 		];
 		$memberMapping = [
 			'lid_lis_id' => 'is_active',
@@ -133,9 +133,9 @@ class ConvertContactsCommand extends Command
 			$contactConverted = [
 				'First name'        => null,
 				'Last name'         => null,
-				'Email'             => null,
+				'Email address'     => null,
 				'Telephone'         => null,
-				'Address line 1'    => null,
+				'Address'           => null,
 				'City'              => null,
 				'State'             => '-',
 				'Postcode'          => null,
@@ -169,15 +169,15 @@ class ConvertContactsCommand extends Command
 			$contactConverted['Last name'] = trim(implode(' ', $contactConverted['Last name']));
 			
 			// collecting address info
-			$streetId = $contactConverted['Address line 1'][0];
-			$houseNumber = $contactConverted['Address line 1'][1];
+			$streetId = $contactConverted['Address'][0];
+			$houseNumber = $contactConverted['Address'][1];
 			
 			if (isset($streetMapping[$streetId])) {
-				$contactConverted['Address line 1'] = $streetMapping[$streetId]['streetName'].' '.$houseNumber;
+				$contactConverted['Address'] = $streetMapping[$streetId]['streetName'].' '.$houseNumber;
 				$contactConverted['City'] = $streetMapping[$streetId]['placeName'];
 			}
 			else {
-				$contactConverted['Address line 1'] = '[straat id '.$streetId.']'.' '.$houseNumber;
+				$contactConverted['Address'] = '[straat id '.$streetId.']'.' '.$houseNumber;
 			}
 			
 			// phone number
