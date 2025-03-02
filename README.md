@@ -107,12 +107,12 @@ Don't forget to update duplicate email addresses in `LendEngine_01_Contacts_[tim
 
 The CSVs from the above scripts (`LendEngine*.csv` for items & contacts) can be imported via Lend Engine's CSV import admin.
 
+- Import contacts (Admin » Settings » Import contacts)
+	- Copy the contents of `LendEngine_01_Contacts_[timestamp].csv` **OR** `LendEngine_01_Contacts_[timestamp]_obfuscated_[timestamp].csv`.
 - Import items (Admin » Items » Bulk update)
 	- Copy the contents of `LendEngine_02_Items_[timestamp].csv` **OR** `LendEngine_02_ItemsAlternative_[timestamp].csv`.
 	- Copy quotes along (copy raw content using text editor, not the selection when opening in a spreadsheet program) to support newlines.
 	- Enable "Create new items where code is not found".
-- Import contacts (Admin » Settings » Import contacts)
-	- Copy the contents of `LendEngine_01_Contacts_[timestamp].csv` **OR** `LendEngine_01_Contacts_[timestamp]_obfuscated_[timestamp].csv`.
 
 ### 4. Import SQLs via Lend Engine support
 

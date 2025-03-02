@@ -211,7 +211,7 @@ class ConvertContactsCommand extends Command
 		file_put_contents($dataDirectory.'/'.$convertedFileName, $convertedCsv);
 		
 		$output->writeln('<info>Done. ' . count($contactsConverted) . ' contacts stored in ' . $convertedFileName . '</info>');
-		$output->writeln('Remember to update duplicate email addresses before importing.');
+		$output->writeln('<comment>Remember to update duplicate email addresses before importing.</comment>');
 		
 		return Command::SUCCESS;
 	}
