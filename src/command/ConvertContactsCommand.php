@@ -22,6 +22,10 @@ class ConvertContactsCommand extends Command
 	private const MEMBER_STATUS_CANCELED = '2';
 	private const MEMBER_STATUS_INACTIVE = '3';
 	
+	// whether or not to allow login after imported in Lend Engine
+	// when false no login link will be added to transactional emails
+	private const ALLOW_LOGIN = true;
+	
 	protected function execute(InputInterface $input, OutputInterface $output): int
 	{
 		$service = new ConvertCsvService();
@@ -45,12 +49,12 @@ class ConvertContactsCommand extends Command
 			'vrw_achternaam'     => 'Last name',
 			'vrw_voornaam'       => 'First name',
 			'vrw_tussenvoegsel'  => 'Last name',
-			'vrw_str_id'         => 'Address line 1',
-			'vrw_huisnr'         => 'Address line 1',
+			'vrw_str_id'         => 'Address',
+			'vrw_huisnr'         => 'Address',
 			'vrw_postcode'       => 'Postcode',
 			'vrw_telefoonnr'     => 'Telephone',
 			'vrw_mobieltelnr'    => 'Telephone',
-			'vrw_email'          => 'Email',
+			'vrw_email'          => 'Email address',
 		];
 		$memberMapping = [
 			'lid_lis_id' => 'is_active',
@@ -133,13 +137,14 @@ class ConvertContactsCommand extends Command
 			$contactConverted = [
 				'First name'        => null,
 				'Last name'         => null,
-				'Email'             => null,
+				'Email address'     => null,
 				'Telephone'         => null,
-				'Address line 1'    => null,
+				'Address'           => null,
 				'City'              => null,
 				'State'             => '-',
 				'Postcode'          => null,
 				'Membership number' => null,
+				'Can log in'        => (self::ALLOW_LOGIN === true) ? '1' : '0',
 			];
 			
 			/**
@@ -169,15 +174,15 @@ class ConvertContactsCommand extends Command
 			$contactConverted['Last name'] = trim(implode(' ', $contactConverted['Last name']));
 			
 			// collecting address info
-			$streetId = $contactConverted['Address line 1'][0];
-			$houseNumber = $contactConverted['Address line 1'][1];
+			$streetId = $contactConverted['Address'][0];
+			$houseNumber = $contactConverted['Address'][1];
 			
 			if (isset($streetMapping[$streetId])) {
-				$contactConverted['Address line 1'] = $streetMapping[$streetId]['streetName'].' '.$houseNumber;
+				$contactConverted['Address'] = $streetMapping[$streetId]['streetName'].' '.$houseNumber;
 				$contactConverted['City'] = $streetMapping[$streetId]['placeName'];
 			}
 			else {
-				$contactConverted['Address line 1'] = '[straat id '.$streetId.']'.' '.$houseNumber;
+				$contactConverted['Address'] = '[straat id '.$streetId.']'.' '.$houseNumber;
 			}
 			
 			// phone number
@@ -206,7 +211,7 @@ class ConvertContactsCommand extends Command
 		file_put_contents($dataDirectory.'/'.$convertedFileName, $convertedCsv);
 		
 		$output->writeln('<info>Done. ' . count($contactsConverted) . ' contacts stored in ' . $convertedFileName . '</info>');
-		$output->writeln('Remember to update duplicate email addresses before importing.');
+		$output->writeln('<comment>Remember to update duplicate email addresses before importing.</comment>');
 		
 		return Command::SUCCESS;
 	}
