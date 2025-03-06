@@ -23,7 +23,7 @@ use Symfony\Component\Console\Output\OutputInterface;
 #[AsCommand(name: 'convert-items')]
 class ConvertItemsCommand extends Command
 {
-	private const STATUS_DELETE = 'Afgekeurd-Definitief';
+	private const string STATUS_DELETE = 'Afgekeurd-Definitief';
 	
 	protected function configure(): void
 	{
@@ -91,14 +91,6 @@ class ConvertItemsCommand extends Command
 		
 		$output->writeln('<info>Exporting items ...</info>');
 		
-		$locationMapping = [];
-		foreach ($articleStatusCsvLines as $articleStatusCsvLine) {
-			$locationId   = $articleStatusCsvLine[$articleStatusMapping['location_id']];
-			$locationName = $articleStatusCsvLine[$articleStatusMapping['location_name']];
-			
-			$locationMapping[$locationId] = $locationName;
-		}
-		
 		$articleTypeMapping = [];
 		foreach ($articleTypeCsvLines as $articleTypeCsvLine) {
 			if ($articleTypeCsvLine['att_actief'] !== '1') {
@@ -120,6 +112,14 @@ class ConvertItemsCommand extends Command
 			}
 			
 			$brandMapping[$brandCsvLine['mrk_id']] = $brandCsvLine['mrk_naam'];
+		}
+		
+		$locationMapping = [];
+		foreach ($articleStatusCsvLines as $articleStatusCsvLine) {
+			$locationId   = $articleStatusCsvLine[$articleStatusMapping['location_id']];
+			$locationName = $articleStatusCsvLine[$articleStatusMapping['location_name']];
+			
+			$locationMapping[$locationId] = $locationName;
 		}
 		
 		$locationPerItem = [];

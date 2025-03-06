@@ -18,10 +18,11 @@ use Symfony\Component\Console\Output\OutputInterface;
 #[AsCommand(name: 'gather-extra-data-item-location')]
 class GatherExtraDataItemLocationCommand extends Command
 {
-	private const STATUS_DELETE    = -1;
-	private const STATUS_TEMPORARY = 0;
-	private const STATUS_ON_LOAN   = 1;
-	private const STATUS_AVAILABLE = 'Gereed voor uitlenen';
+	private const int STATUS_DELETE    = -1;
+	private const int STATUS_TEMPORARY = 0;
+	private const int STATUS_ON_LOAN   = 1;
+	private const string ITEM_STATUS_AVAILABLE = 'Gereed voor uitlenen';
+	private const string ITEM_STATUS_DELETE = 'Afgekeurd-Definitief';
 	private const STATUS_MAPPING   = [
 		'Afgekeurd (Tijdelijk)'  => 'Repair',
 		'Afgekeurd-Definitief'   => self::STATUS_DELETE,
@@ -81,27 +82,35 @@ class GatherExtraDataItemLocationCommand extends Command
 			$locationMapping[$locationId] = $locationName;
 		}
 		
-		$canonicalArticleMapping = [];
+		$locationPerItem = [];
+		foreach ($articleStatusLoggingCsvLines as $articleStatusLoggingCsvLine) {
+			$articleId    = $articleStatusLoggingCsvLine[$articleStatusLoggingMapping['item_id']];
+			$locationId   = $articleStatusLoggingCsvLine[$articleStatusLoggingMapping['location_id']];
+			$locationName = $locationMapping[$locationId];
+			
+			// overwrite with the latest location log per article
+			$locationPerItem[$articleId] = $locationName;
+		}
+		
+		$articleSkuMapping = [];
 		foreach ($articleCsvLines as $articleCsvLine) {
 			$articleId  = $articleCsvLine['art_id'];
 			$articleSku = $articleCsvLine['art_key'];
 			
-			$canonicalArticleMapping[$articleSku] = $articleId;
+			$articleSkuMapping[$articleId] = $articleSku;
 		}
-		$canonicalArticleMapping = array_flip($canonicalArticleMapping);
 		
 		$itemLocationDataSet = [];
 		$statisticsPerSku = [];
 		foreach ($articleStatusLoggingCsvLines as $articleStatusLoggingCsvLine) {
 			$itemId = $articleStatusLoggingCsvLine[$articleStatusLoggingMapping['item_id']];
 			
-			// skip non-last items of duplicate SKUs
-			// SKUs are re-used and old articles are made inactive
-			if (isset($canonicalArticleMapping[$itemId]) === false) {
+			// skip permanently removed
+			if ($locationPerItem[$itemId] === self::ITEM_STATUS_DELETE) {
 				continue;
 			}
 			
-			$itemSku      = $canonicalArticleMapping[$itemId];
+			$itemSku      = $articleSkuMapping[$itemId];
 			$locationId   = $articleStatusLoggingCsvLine[$articleStatusLoggingMapping['location_id']];
 			$locationName = $locationMapping[$locationId];
 			$logCreatedAt = \DateTime::createFromFormat('Y-n-j H:i:s', $articleStatusLoggingCsvLine[$articleStatusLoggingMapping['created_at']], new \DateTimeZone('Europe/Amsterdam'));
@@ -134,7 +143,7 @@ class GatherExtraDataItemLocationCommand extends Command
 				continue;
 			}
 			
-			$isAvailable = ($locationName === self::STATUS_AVAILABLE) ? '1' : '0';
+			$isAvailable = ($locationName === self::ITEM_STATUS_AVAILABLE) ? '1' : '0';
 			
 			$itemLocationQueries[] = "
 			    INSERT
