@@ -21,7 +21,8 @@ use Symfony\Component\Console\Output\OutputInterface;
 #[AsCommand(name: 'gather-extra-data-loans')]
 class GatherExtraDataLoansCommand extends Command
 {
-	private const STATUS_ON_LOAN = 'Uitgeleend';
+	private const string ITEM_STATUS_ON_LOAN = 'Uitgeleend';
+	private const string ITEM_STATUS_DELETE = 'Afgekeurd-Definitief';
 	
 	protected function execute(InputInterface $input, OutputInterface $output): int
 	{
@@ -138,26 +139,34 @@ class GatherExtraDataLoansCommand extends Command
 			$locationMapping[$locationId] = $locationName;
 		}
 		
-		$canonicalArticleMapping = [];
+		$locationPerItem = [];
+		foreach ($articleStatusLoggingCsvLines as $articleStatusLoggingCsvLine) {
+			$articleId    = $articleStatusLoggingCsvLine[$articleStatusLoggingMapping['item_id']];
+			$locationId   = $articleStatusLoggingCsvLine[$articleStatusLoggingMapping['location_id']];
+			$locationName = $locationMapping[$locationId];
+			
+			// overwrite with the latest location log per article
+			$locationPerItem[$articleId] = $locationName;
+		}
+		
+		$articleSkuMapping = [];
 		foreach ($articleCsvLines as $articleCsvLine) {
 			$articleId  = $articleCsvLine['art_id'];
 			$articleSku = $articleCsvLine['art_key'];
 			
-			$canonicalArticleMapping[$articleSku] = $articleId;
+			$articleSkuMapping[$articleId] = $articleSku;
 		}
-		$canonicalArticleMapping = array_flip($canonicalArticleMapping);
 		
 		$itemLocationDataSet = [];
 		foreach ($articleStatusLoggingCsvLines as $articleStatusLoggingCsvLine) {
 			$itemId = $articleStatusLoggingCsvLine[$articleStatusLoggingMapping['item_id']];
 			
-			// skip non-last items of duplicate SKUs
-			// SKUs are re-used and old articles are made inactive
-			if (isset($canonicalArticleMapping[$itemId]) === false) {
+			// skip permanently removed
+			if ($locationPerItem[$itemId] === self::ITEM_STATUS_DELETE) {
 				continue;
 			}
 			
-			$itemSku        = $canonicalArticleMapping[$itemId];
+			$itemSku        = $articleSkuMapping[$itemId];
 			$locationId     = $articleStatusLoggingCsvLine[$articleStatusLoggingMapping['location_id']];
 			$locationName   = $locationMapping[$locationId];
 			$loanCreatedAt  = \DateTime::createFromFormat('Y-n-j H:i:s', $articleStatusLoggingCsvLine[$articleStatusLoggingMapping['created_at']], new \DateTimeZone('Europe/Amsterdam'));
@@ -182,7 +191,7 @@ class GatherExtraDataLoansCommand extends Command
 		$loanRowDataSet = [];
 		foreach ($itemLocationDataSet as $itemSku => $loanData) {
 			$locationName = $loanData['locationName'];
-			if ($locationName !== self::STATUS_ON_LOAN) {
+			if ($locationName !== self::ITEM_STATUS_ON_LOAN) {
 				continue;
 			}
 			

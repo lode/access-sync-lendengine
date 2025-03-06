@@ -6,6 +6,8 @@ namespace Lode\AccessSyncLendEngine\command;
 
 use Lode\AccessSyncLendEngine\service\ConvertCsvService;
 use Lode\AccessSyncLendEngine\specification\ArticleSpecification;
+use Lode\AccessSyncLendEngine\specification\ArticleStatusLogSpecification;
+use Lode\AccessSyncLendEngine\specification\ArticleStatusSpecification;
 use Lode\AccessSyncLendEngine\specification\EmployeeSpecification;
 use Lode\AccessSyncLendEngine\specification\MemberSpecification;
 use Lode\AccessSyncLendEngine\specification\MessageKindSpecification;
@@ -19,6 +21,8 @@ use Symfony\Component\Console\Question\ConfirmationQuestion;
 #[AsCommand(name: 'gather-extra-data-notes')]
 class GatherExtraDataNotesCommand extends Command
 {
+	private const string ITEM_STATUS_DELETE = 'Afgekeurd-Definitief';
+	
 	protected function execute(InputInterface $input, OutputInterface $output): int
 	{
 		$service = new ConvertCsvService();
@@ -30,6 +34,8 @@ class GatherExtraDataNotesCommand extends Command
 				'Melding.csv',
 				'MeldingSoort.csv',
 				'Artikel.csv',
+				'ArtikelStatus.csv',
+				'ArtikelStatusLogging.csv',
 				'Lid.csv',
 				'Medewerker.csv',
 				'Verantwoordelijke.csv',
@@ -59,6 +65,14 @@ class GatherExtraDataNotesCommand extends Command
 			'kind_id'   => 'Mls_id',
 			'kind_name' => 'Mls_Naam',
 		];
+		$articleStatusMapping = [
+			'location_id'   => 'ats_id',
+			'location_name' => 'ats_oms',
+		];
+		$articleStatusLoggingMapping = [
+			'item_id'     => 'asl_art_id',
+			'location_id' => 'asl_ats_id',
+		];
 		
 		$messageCsvLines = $service->getExportCsv($dataDirectory.'/Melding.csv', (new MessageSpecification())->getExpectedHeaders());
 		$output->writeln('Imported ' . count($messageCsvLines). ' meldingen');
@@ -68,6 +82,12 @@ class GatherExtraDataNotesCommand extends Command
 		
 		$articleCsvLines = $service->getExportCsv($dataDirectory.'/Artikel.csv', (new ArticleSpecification())->getExpectedHeaders());
 		$output->writeln('Imported ' . count($articleCsvLines). ' artikelen');
+		
+		$articleStatusCsvLines = $service->getExportCsv($dataDirectory.'/ArtikelStatus.csv', (new ArticleStatusSpecification())->getExpectedHeaders());
+		$output->writeln('Imported ' . count($articleStatusCsvLines) . ' article statuses');
+		
+		$articleStatusLoggingCsvLines = $service->getExportCsv($dataDirectory.'/ArtikelStatusLogging.csv', (new ArticleStatusLogSpecification())->getExpectedHeaders());
+		$output->writeln('Imported ' . count($articleStatusLoggingCsvLines) . ' article status logs');
 		
 		$memberCsvLines = $service->getExportCsv($dataDirectory.'/Lid.csv', (new MemberSpecification())->getExpectedHeaders());
 		$output->writeln('Imported ' . count($memberCsvLines). ' leden');
@@ -104,14 +124,31 @@ class GatherExtraDataNotesCommand extends Command
 			$employeeMapping[$employeeId] = $responsibleId;
 		}
 		
-		$canonicalArticleMapping = [];
+		$locationMapping = [];
+		foreach ($articleStatusCsvLines as $articleStatusCsvLine) {
+			$locationId   = $articleStatusCsvLine[$articleStatusMapping['location_id']];
+			$locationName = $articleStatusCsvLine[$articleStatusMapping['location_name']];
+			
+			$locationMapping[$locationId] = $locationName;
+		}
+		
+		$locationPerItem = [];
+		foreach ($articleStatusLoggingCsvLines as $articleStatusLoggingCsvLine) {
+			$articleId    = $articleStatusLoggingCsvLine[$articleStatusLoggingMapping['item_id']];
+			$locationId   = $articleStatusLoggingCsvLine[$articleStatusLoggingMapping['location_id']];
+			$locationName = $locationMapping[$locationId];
+			
+			// overwrite with the latest location log per article
+			$locationPerItem[$articleId] = $locationName;
+		}
+		
+		$articleSkuMapping = [];
 		foreach ($articleCsvLines as $articleCsvLine) {
 			$articleId  = $articleCsvLine['art_id'];
 			$articleSku = $articleCsvLine['art_key'];
 			
-			$canonicalArticleMapping[$articleSku] = $articleId;
+			$articleSkuMapping[$articleId] = $articleSku;
 		}
-		$canonicalArticleMapping = array_flip($canonicalArticleMapping);
 		
 		$noteQueries = [];
 		$failures = [];
@@ -158,13 +195,12 @@ class GatherExtraDataNotesCommand extends Command
 				
 				$articleId  = $messageCsvLine[$messageMapping['inventory_item_id']];
 				
-				// skip non-last items of duplicate SKUs
-				// SKUs are re-used and old articles are made inactive
-				if (isset($canonicalArticleMapping[$articleId]) === false) {
+				// skip permanently removed
+				if ($locationPerItem[$articleId] === self::ITEM_STATUS_DELETE) {
 					continue;
 				}
 				
-				$articleSku = $canonicalArticleMapping[$articleId];
+				$articleSku = $articleSkuMapping[$articleId];
 				
 				$relationQuery = "
 					`inventory_item_id` = (

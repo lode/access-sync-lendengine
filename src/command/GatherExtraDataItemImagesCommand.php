@@ -150,6 +150,13 @@ class GatherExtraDataItemImagesCommand extends Command
 			;";
 		}
 		
+		// cleanup images where the item was not exported
+		$itemImagesQueries[] = "
+		    DELETE
+		      FROM `image`
+		     WHERE `inventory_item_id` IS NULL
+		;";
+		
 		$progressBar->finish();
 		$output->writeln('');
 		

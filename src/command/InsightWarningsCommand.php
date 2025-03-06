@@ -7,6 +7,8 @@ namespace Lode\AccessSyncLendEngine\command;
 use Lode\AccessSyncLendEngine\service\ConvertCsvService;
 use Lode\AccessSyncLendEngine\specification\ArticleLendPeriodSpecification;
 use Lode\AccessSyncLendEngine\specification\ArticleSpecification;
+use Lode\AccessSyncLendEngine\specification\ArticleStatusLogSpecification;
+use Lode\AccessSyncLendEngine\specification\ArticleStatusSpecification;
 use Lode\AccessSyncLendEngine\specification\ArticleTypeSpecification;
 use Lode\AccessSyncLendEngine\specification\BrandSpecification;
 use Symfony\Component\Console\Attribute\AsCommand;
@@ -17,6 +19,8 @@ use Symfony\Component\Console\Output\OutputInterface;
 #[AsCommand(name: 'insight-warnings')]
 class InsightWarningsCommand extends Command
 {
+	private const string ITEM_STATUS_DELETE = 'Afgekeurd-Definitief';
+	
 	protected function execute(InputInterface $input, OutputInterface $output): int
 	{
 		$service = new ConvertCsvService();
@@ -26,6 +30,8 @@ class InsightWarningsCommand extends Command
 			$dataDirectory,
 			[
 				'Artikel.csv',
+				'ArtikelStatus.csv',
+				'ArtikelStatusLogging.csv',
 			],
 			$output,
 		);
@@ -56,18 +62,42 @@ class InsightWarningsCommand extends Command
 			'mist'       => 'Iets is kwijt/kapot',
 			'stuk'       => 'Iets is kwijt/kapot',
 		];
+		$articleStatusMapping = [
+			'location_id'   => 'ats_id',
+			'location_name' => 'ats_oms',
+		];
+		$articleStatusLoggingMapping = [
+			'item_id'     => 'asl_art_id',
+			'location_id' => 'asl_ats_id',
+		];
 		
 		$articleCsvLines = $service->getExportCsv($dataDirectory.'/Artikel.csv', (new ArticleSpecification())->getExpectedHeaders());
 		$output->writeln('Imported ' . count($articleCsvLines). ' artikelen');
 		
+		$articleStatusCsvLines = $service->getExportCsv($dataDirectory.'/ArtikelStatus.csv', (new ArticleStatusSpecification())->getExpectedHeaders());
+		$output->writeln('Imported ' . count($articleStatusCsvLines) . ' article statuses');
+		
+		$articleStatusLoggingCsvLines = $service->getExportCsv($dataDirectory.'/ArtikelStatusLogging.csv', (new ArticleStatusLogSpecification())->getExpectedHeaders());
+		$output->writeln('Imported ' . count($articleStatusLoggingCsvLines) . ' article status logs');
+		
 		$output->writeln('<info>Collecting warnings ...</info>');
 		
-		$canonicalArticleMapping = [];
-		foreach ($articleCsvLines as $articleCsvLine) {
-			$articleId  = $articleCsvLine['art_id'];
-			$articleSku = $articleCsvLine['art_key'];
+		$locationMapping = [];
+		foreach ($articleStatusCsvLines as $articleStatusCsvLine) {
+			$locationId   = $articleStatusCsvLine[$articleStatusMapping['location_id']];
+			$locationName = $articleStatusCsvLine[$articleStatusMapping['location_name']];
 			
-			$canonicalArticleMapping[$articleSku] = $articleId;
+			$locationMapping[$locationId] = $locationName;
+		}
+		
+		$locationPerItem = [];
+		foreach ($articleStatusLoggingCsvLines as $articleStatusLoggingCsvLine) {
+			$articleId    = $articleStatusLoggingCsvLine[$articleStatusLoggingMapping['item_id']];
+			$locationId   = $articleStatusLoggingCsvLine[$articleStatusLoggingMapping['location_id']];
+			$locationName = $locationMapping[$locationId];
+			
+			// overwrite with the latest location log per article
+			$locationPerItem[$articleId] = $locationName;
 		}
 		
 		$itemsCollected = [];
@@ -81,11 +111,11 @@ class InsightWarningsCommand extends Command
 		}
 		
 		foreach ($articleCsvLines as $articleCsvLine) {
-			// skip non-last items of duplicate SKUs
-			// SKUs are re-used and old articles are made inactive
 			$articleId  = $articleCsvLine['art_id'];
 			$articleSku = $articleCsvLine['art_key'];
-			if ($canonicalArticleMapping[$articleSku] !== $articleId) {
+			
+			// skip permanently removed
+			if ($locationPerItem[$articleId] === self::ITEM_STATUS_DELETE) {
 				continue;
 			}
 			
