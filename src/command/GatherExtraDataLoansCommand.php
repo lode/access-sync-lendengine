@@ -10,6 +10,8 @@ use Lode\AccessSyncLendEngine\specification\ArticleStatusLogSpecification;
 use Lode\AccessSyncLendEngine\specification\ArticleStatusSpecification;
 use Lode\AccessSyncLendEngine\specification\EmployeeSpecification;
 use Lode\AccessSyncLendEngine\specification\MemberSpecification;
+use Lode\AccessSyncLendEngine\specification\OpeningSpecification;
+use Lode\AccessSyncLendEngine\specification\OpeningtimeSpecification;
 use Symfony\Component\Console\Attribute\AsCommand;
 use Symfony\Component\Console\Command\Command;
 use Symfony\Component\Console\Input\InputArgument;
@@ -34,6 +36,8 @@ class GatherExtraDataLoansCommand extends Command
 				'ArtikelStatusLogging.csv',
 				'Lid.csv',
 				'Medewerker.csv',
+				'Opening.csv',
+				'Openingstijd.csv',
 			],
 			$output,
 		);
@@ -72,6 +76,12 @@ class GatherExtraDataLoansCommand extends Command
 		$employeeCsvLines = $service->getExportCsv($dataDirectory.'/Medewerker.csv', (new EmployeeSpecification())->getExpectedHeaders());
 		$output->writeln('Imported ' . count($employeeCsvLines). ' medewerkers');
 		
+		$openingCsvLines = $service->getExportCsv($dataDirectory.'/Opening.csv', (new OpeningSpecification())->getExpectedHeaders());
+		$output->writeln('Imported ' . count($openingCsvLines). ' openingen');
+		
+		$openingtimeCsvLines = $service->getExportCsv($dataDirectory.'/Openingstijd.csv', (new OpeningtimeSpecification())->getExpectedHeaders());
+		$output->writeln('Imported ' . count($openingtimeCsvLines). ' openingstijden');
+		
 		$output->writeln('<info>Exporting loans ...</info>');
 		
 		$membershipNumberMapping = [];
@@ -97,6 +107,27 @@ class GatherExtraDataLoansCommand extends Command
 			$responsibleId = $employeeCsvLine['mdw_vrw_id'];
 			
 			$employeeMapping[$employeeId] = $responsibleId;
+		}
+		
+		$openingtimeMapping = [];
+		foreach ($openingtimeCsvLines as $openingtimeCsvLine) {
+			$openingtimeId    = $openingtimeCsvLine['opt_id'];
+			$openingtimeStart = $openingtimeCsvLine['opt_vanaftijd'];
+			
+			$openingtimeMapping[$openingtimeId] = $openingtimeStart;
+		}
+		
+		$openingMapping = [];
+		foreach ($openingCsvLines as $openingCsvLine) {
+			$openingId     = $openingCsvLine['ope_id'];
+			$openingtimeId = $openingCsvLine['ope_opt_id'];
+			
+			$openingDate      = substr($openingCsvLine['ope_datum'], 0, strpos($openingCsvLine['ope_datum'], ' '));
+			$openingtimeStart = substr($openingtimeMapping[$openingtimeId], strpos($openingtimeMapping[$openingtimeId], ' ')+1);
+			$openingStart     = \DateTime::createFromFormat('Y-n-j H:i:s', $openingDate.' '.$openingtimeStart, new \DateTimeZone('Europe/Amsterdam'));
+			$openingStart->setTimezone(new \DateTimeZone('UTC'));
+			
+			$openingMapping[$openingId] = $openingStart;
 		}
 		
 		$locationMapping = [];
@@ -183,15 +214,8 @@ class GatherExtraDataLoansCommand extends Command
 			$employeeMembershipNumber = $responsibleMembershipNumberMapping[$employeeMapping[$loanData['employee']]];
 			$status                   = 'ACTIVE'; // LE automatically will set to 'OVERDUE' if needed
 			$createdAt                = $loanData['created']->format('Y-m-d H:i:s');
-			
-			// fake due out/in data
-			$datetimeOut              = $loanData['created']->format('Y-m-d H:i:s');
-			$datetimeIn               = clone $loanData['created'];
-			$datetimeIn               = ($datetimeIn->modify('+28 days'))->format('Y-m-d H:i:s');
-			
-			// todo fetch data from opening table
-			#$datetimeOut              = $someMapping[$loanData['loanOut']]->format('Y-m-d H:i:s'); // ope_id
-			#$datetimeIn               = $someMapping[$loanData['loanIn']]->format('Y-m-d H:i:s'); // ope_id
+			$datetimeOut              = $openingMapping[$loanData['loanOut']]->format('Y-m-d H:i:s');
+			$datetimeIn               = $openingMapping[$loanData['loanIn']]->format('Y-m-d H:i:s');
 			
 			$loanQueries[] = "
 			    INSERT
