@@ -15,6 +15,7 @@ use Lode\AccessSyncLendEngine\command\GatherExtraDataItemLocationCommand;
 use Lode\AccessSyncLendEngine\command\GatherExtraDataItemPartMutationsCommand;
 use Lode\AccessSyncLendEngine\command\GatherExtraDataItemPartsCommand;
 use Lode\AccessSyncLendEngine\command\GatherExtraDataItemsCommand;
+use Lode\AccessSyncLendEngine\command\GatherExtraDataLoansCommand;
 use Lode\AccessSyncLendEngine\command\GatherExtraDataMembershipsCommand;
 use Lode\AccessSyncLendEngine\command\GatherExtraDataNotesCommand;
 use Lode\AccessSyncLendEngine\command\InsightContactsCommand;
@@ -37,6 +38,7 @@ $application->add(new GatherExtraDataItemImagesCommand());
 $application->add(new GatherExtraDataItemLocationCommand());
 $application->add(new GatherExtraDataItemPartsCommand());
 $application->add(new GatherExtraDataItemPartMutationsCommand());
+$application->add(new GatherExtraDataLoansCommand());
 $application->add(new GatherExtraDataMembershipsCommand());
 $application->add(new GatherExtraDataNotesCommand());
 
