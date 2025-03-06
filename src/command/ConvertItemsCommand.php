@@ -225,6 +225,7 @@ class ConvertItemsCommand extends Command
 				$repairQueries[] = "DELETE FROM `item_movement` WHERE `inventory_item_id` = @itemId;";
 				$repairQueries[] = "DELETE FROM `item_part` WHERE `item_id` = @itemId;";
 				$repairQueries[] = "DELETE FROM `note` WHERE `inventory_item_id` = @itemId;";
+				$repairQueries[] = "DELETE FROM `product_field_value` WHERE `inventory_item_id` = @itemId;";
 				$repairQueries[] = "DELETE FROM `inventory_item` WHERE `id` = @itemId;";
 			}
 			
