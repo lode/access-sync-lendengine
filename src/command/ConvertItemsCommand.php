@@ -7,6 +7,8 @@ namespace Lode\AccessSyncLendEngine\command;
 use Lode\AccessSyncLendEngine\service\ConvertCsvService;
 use Lode\AccessSyncLendEngine\specification\ArticleLendPeriodSpecification;
 use Lode\AccessSyncLendEngine\specification\ArticleSpecification;
+use Lode\AccessSyncLendEngine\specification\ArticleStatusLogSpecification;
+use Lode\AccessSyncLendEngine\specification\ArticleStatusSpecification;
 use Lode\AccessSyncLendEngine\specification\ArticleTypeSpecification;
 use Lode\AccessSyncLendEngine\specification\BrandSpecification;
 use Symfony\Component\Console\Attribute\AsCommand;
@@ -21,15 +23,25 @@ use Symfony\Component\Console\Output\OutputInterface;
 #[AsCommand(name: 'convert-items')]
 class ConvertItemsCommand extends Command
 {
+	private const STATUS_DELETE = 'Afgekeurd-Definitief';
+	
+	protected function configure(): void
+	{
+		$this->addOption('withCorrections', description: 'generate corrections SQLs for older version of this script');
+	}
+	
 	protected function execute(InputInterface $input, OutputInterface $output): int
 	{
 		$service = new ConvertCsvService();
 		$dataDirectory = dirname(dirname(__DIR__)).'/data';
+		$withCorrections = $input->getOption('withCorrections');
 		
 		$service->requireInputCsvs(
 			$dataDirectory,
 			[
 				'Artikel.csv',
+				'ArtikelStatus.csv',
+				'ArtikelStatusLogging.csv',
 				'ArtikelType.csv',
 				'ArtikelUitleenDuur.csv',
 				'Merk.csv',
@@ -50,9 +62,23 @@ class ConvertItemsCommand extends Command
 			'art_aud_id'        => 'Per',
 			'art_reserveerbaar' => 'Reservable',
 		];
+		$articleStatusMapping = [
+			'location_id'   => 'ats_id',
+			'location_name' => 'ats_oms',
+		];
+		$articleStatusLoggingMapping = [
+			'item_id'     => 'asl_art_id',
+			'location_id' => 'asl_ats_id',
+		];
 		
 		$articleCsvLines = $service->getExportCsv($dataDirectory.'/Artikel.csv', (new ArticleSpecification())->getExpectedHeaders());
 		$output->writeln('Imported ' . count($articleCsvLines). ' artikelen');
+		
+		$articleStatusCsvLines = $service->getExportCsv($dataDirectory.'/ArtikelStatus.csv', (new ArticleStatusSpecification())->getExpectedHeaders());
+		$output->writeln('Imported ' . count($articleStatusCsvLines) . ' article statuses');
+		
+		$articleStatusLoggingCsvLines = $service->getExportCsv($dataDirectory.'/ArtikelStatusLogging.csv', (new ArticleStatusLogSpecification())->getExpectedHeaders());
+		$output->writeln('Imported ' . count($articleStatusLoggingCsvLines) . ' article status logs');
 		
 		$articleTypeCsvLines = $service->getExportCsv($dataDirectory.'/ArtikelType.csv', (new ArticleTypeSpecification())->getExpectedHeaders());
 		$output->writeln('Imported ' . count($articleTypeCsvLines). ' artikeltypes');
@@ -64,6 +90,14 @@ class ConvertItemsCommand extends Command
 		$output->writeln('Imported ' . count($brandCsvLines). ' merken');
 		
 		$output->writeln('<info>Exporting items ...</info>');
+		
+		$locationMapping = [];
+		foreach ($articleStatusCsvLines as $articleStatusCsvLine) {
+			$locationId   = $articleStatusCsvLine[$articleStatusMapping['location_id']];
+			$locationName = $articleStatusCsvLine[$articleStatusMapping['location_name']];
+			
+			$locationMapping[$locationId] = $locationName;
+		}
 		
 		$articleTypeMapping = [];
 		foreach ($articleTypeCsvLines as $articleTypeCsvLine) {
@@ -88,23 +122,28 @@ class ConvertItemsCommand extends Command
 			$brandMapping[$brandCsvLine['mrk_id']] = $brandCsvLine['mrk_naam'];
 		}
 		
-		$canonicalArticleMapping = [];
-		foreach ($articleCsvLines as $articleCsvLine) {
-			$articleId  = $articleCsvLine['art_id'];
-			$articleSku = $articleCsvLine['art_key'];
+		$locationPerItem = [];
+		foreach ($articleStatusLoggingCsvLines as $articleStatusLoggingCsvLine) {
+			$articleId    = $articleStatusLoggingCsvLine[$articleStatusLoggingMapping['item_id']];
+			$locationId   = $articleStatusLoggingCsvLine[$articleStatusLoggingMapping['location_id']];
+			$locationName = $locationMapping[$locationId];
 			
-			$canonicalArticleMapping[$articleSku] = $articleId;
+			// overwrite with the latest location log per article
+			$locationPerItem[$articleId] = $locationName;
 		}
 		
 		$itemsConverted = [];
+		$skusConverted = [];
+		$skusSkipped = [];
 		foreach ($articleCsvLines as $articleCsvLine) {
-			// skip non-last items of duplicate SKUs
-			// SKUs are re-used and old articles are made inactive
+			// skip permanently removed
 			$articleId  = $articleCsvLine['art_id'];
 			$articleSku = $articleCsvLine['art_key'];
-			if ($canonicalArticleMapping[$articleSku] !== $articleId) {
+			if ($locationPerItem[$articleId] === self::STATUS_DELETE) {
+				$skusSkipped[$articleSku] = true;
 				continue;
 			}
+			$skusConverted[$articleSku] = true;
 			
 			$itemConverted = [
 				'Code'             => null,
@@ -170,6 +209,27 @@ class ConvertItemsCommand extends Command
 		file_put_contents($dataDirectory.'/'.$convertedFileName, $convertedCsv);
 		
 		$output->writeln('<info>Done. ' . count($itemsConverted) . ' items stored in ' . $convertedFileName . '</info>');
+		
+		/**
+		 * generate SQLs to repair an import created by the previous version of this script
+		 */
+		if ($withCorrections === true) {
+			$repairQueries = [];
+			foreach ($skusSkipped as $sku => $null) {
+				if (isset($skusConverted[$sku]) === true) {
+					continue;
+				}
+				
+				$repairQueries[] = "SET @itemId = (SELECT `id` FROM `inventory_item` WHERE `sku` = '".$sku."');";
+				$repairQueries[] = "DELETE FROM `image` WHERE `inventory_item_id` = @itemId;";
+				$repairQueries[] = "DELETE FROM `item_movement` WHERE `inventory_item_id` = @itemId;";
+				$repairQueries[] = "DELETE FROM `item_part` WHERE `item_id` = @itemId;";
+				$repairQueries[] = "DELETE FROM `note` WHERE `inventory_item_id` = @itemId;";
+				$repairQueries[] = "DELETE FROM `inventory_item` WHERE `id` = @itemId;";
+			}
+			
+			$service->createExportSqls($output, $dataDirectory, '12_ItemCorrections', $repairQueries, 'loans');
+		}
 		
 		return Command::SUCCESS;
 	}
