@@ -20,6 +20,7 @@ class GatherExtraDataItemLocationCommand extends Command
 {
 	private const STATUS_DELETE    = -1;
 	private const STATUS_TEMPORARY = 0;
+	private const STATUS_ON_LOAN   = 1;
 	private const STATUS_AVAILABLE = 'Gereed voor uitlenen';
 	private const STATUS_MAPPING   = [
 		'Afgekeurd (Tijdelijk)'  => 'Repair',
@@ -27,7 +28,7 @@ class GatherExtraDataItemLocationCommand extends Command
 		'Gereed voor uitlenen'   => 'In stock',
 		'Ingenomen: Controleren' => self::STATUS_TEMPORARY,
 		'Initieel'               => self::STATUS_TEMPORARY,
-		'Uitgeleend'             => self::STATUS_TEMPORARY,
+		'Uitgeleend'             => self::STATUS_ON_LOAN,
 		'Verdwenen/kapot'        => self::STATUS_TEMPORARY,
 	];
 	
@@ -149,7 +150,7 @@ class GatherExtraDataItemLocationCommand extends Command
 		foreach ($itemLocationDataSet as $itemLocationData) {
 			$locationName = $itemLocationData['locationName'];
 			$locationAction = self::STATUS_MAPPING[$locationName] ?? self::STATUS_TEMPORARY;
-			if ($locationAction === self::STATUS_DELETE) {
+			if ($locationAction === self::STATUS_DELETE || $locationAction === self::STATUS_ON_LOAN) {
 				continue;
 			}
 			elseif ($locationAction === self::STATUS_TEMPORARY) {

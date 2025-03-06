@@ -258,13 +258,25 @@ class GatherExtraDataLoansCommand extends Command
 				           `site_from`         = 1,
 				           `site_to`           = 1
 				;";
+				
+				$loanQueries[] = "
+				    INSERT
+				      INTO `item_movement`
+				       SET `inventory_item_id` = (
+	                           SELECT `id`
+	                             FROM `inventory_item`
+	                            WHERE `sku` = '".$itemSku."'
+				           ),
+				           `inventory_location_id` = 1,
+				           `created_at` = '".$createdAt."'
+				;";
 			}
 			
 			$skus = "'".implode("', '", $loanData['items'])."'";
 			$loanQueries[] = "UPDATE `inventory_item` SET `current_location_id` = 1 WHERE `sku` IN (".$skus.");";
 		}
 		
-		$service->createExportSqls($output, $dataDirectory, '12_Loan_ExtraData', $loanQueries, 'loans');
+		$service->createExportSqls($output, $dataDirectory, '07_Loan_ExtraData', $loanQueries, 'loans');
 		
 		return Command::SUCCESS;
 	}
