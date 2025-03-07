@@ -93,8 +93,8 @@ class GatherExtraDataMembershipsCommand extends Command
 			'tariff_ledger' => 'tar_kat_id',
 		];
 		$ledgerTypeMapping = [
-			'ledger_id'  => 'kat_id',
-			'ledger_key' => 'kat_oms',
+			'ledger_type_id'  => 'kat_id',
+			'ledger_type_key' => 'kat_oms',
 		];
 		$tariffUnitMapping = [
 			'tariff_unit_id'  => 'tae_id',
@@ -110,11 +110,12 @@ class GatherExtraDataMembershipsCommand extends Command
 		
 		$output->writeln('<info>Exporting memberships ...</info>');
 		
-		$ledgers = [];
+		$ledgerTypes = [];
 		foreach ($ledgerTypeCsvLines as $ledgerTypeCsvLine) {
-			$ledgerId  = $ledgerTypeCsvLine[$ledgerTypeMapping['ledger_id']];
-			$ledgerKey = $ledgerTypeCsvLine[$ledgerTypeMapping['ledger_key']];
-			$ledgers[$ledgerId] = $ledgerKey;
+			$ledgerTypeId  = $ledgerTypeCsvLine[$ledgerTypeMapping['ledger_type_id']];
+			$ledgerTypeKey = $ledgerTypeCsvLine[$ledgerTypeMapping['ledger_type_key']];
+			
+			$ledgerTypes[$ledgerTypeId] = $ledgerTypeKey;
 		}
 		
 		$tariffUnits = [];
@@ -131,7 +132,7 @@ class GatherExtraDataMembershipsCommand extends Command
 			$tariffDetails[$tariffId] = [
 				'code'     => $tariffCsvLine[$tariffMapping['tariff_key']],
 				'name'     => $tariffCsvLine[$tariffMapping['tariff_name']],
-				'category' => $ledgers[$tariffCsvLine[$tariffMapping['tariff_ledger']]],
+				'category' => $ledgerTypes[$tariffCsvLine[$tariffMapping['tariff_ledger']]],
 			];
 		}
 		foreach ($tariffPeriodCsvLines as $tariffPeriodCsvLine) {
