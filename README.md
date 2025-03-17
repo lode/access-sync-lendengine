@@ -29,6 +29,7 @@ This discusses migrating data and making the correct settings.
 	- ArtikelStatusLogging
 	- ArtikelType
 	- ArtikelUitleenDuur
+	- Kasboek
 	- KasboekType
 	- Lid
 	- LidStatus
@@ -74,6 +75,7 @@ Each script migrates a part of the data, you can choose which to run and do a ma
 | Memberships | `gather-extra-data-memberships` | Contact <> Subscription, period. |
 | Item status | `gather-extra-data-item-location` | Locations ("status") for items. |
 | Loans | `gather-extra-data-loans` | Loans which are still active/overdue. |
+| Fees | `gather-extra-data-fees` | Open fees for late return or part mutations. |
 | Notes | `gather-extra-data-notes` | Messages ("meldingen") for contacts and items. |
 | Contact notes | `gather-extra-data-contact-notes` | Specifics ("bijzonderheden") for contacts. |
 | Items extras | `gather-extra-data-items` | Item created, show on catalogus. |
@@ -96,6 +98,7 @@ Run them one-by-one as some are not needed for your use case, and some have inte
 ./script/console ./script/command gather-extra-data-memberships
 ./script/console ./script/command gather-extra-data-item-location
 ./script/console ./script/command gather-extra-data-loans
+./script/console ./script/command gather-extra-data-fees
 ./script/console ./script/command gather-extra-data-notes
 ./script/console ./script/command gather-extra-data-contact-notes
 ./script/console ./script/command gather-extra-data-items
