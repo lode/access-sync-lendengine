@@ -31,6 +31,7 @@ This discusses migrating data and making the correct settings.
 	- ArtikelUitleenDuur
 	- Kasboek
 	- KasboekType
+	- Kleur
 	- Lid
 	- LidStatus
 	- LidType
@@ -69,7 +70,7 @@ Each script migrates a part of the data, you can choose which to run and do a ma
 | Contacts | `convert-contacts` | Contact basics: name, email, phone, address, membership number, etc. |
 | Items | `convert-items` | Item basics: name, code, category, brand, price, etc. |
 | Items alternative | `convert-website-csvs [csvTimestamp]` | Item basics, alternative method with webcatalogus CSVs. |
-| Parts | `gather-extra-data-item-parts` | Count, description. |
+| Parts | `gather-extra-data-item-parts (--useColors)` | Count, description. |
 | Parts mutations | `gather-extra-data-item-part-mutations` | Count missing/broken, explanation. |
 | Images | `gather-extra-data-item-images photos` | Item images (SQL and converted image files). |
 | Memberships | `gather-extra-data-memberships` | Contact <> Subscription, period. |
