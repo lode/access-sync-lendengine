@@ -8,6 +8,7 @@ use Lode\AccessSyncLendEngine\service\ConvertCsvService;
 use Lode\AccessSyncLendEngine\specification\ArticleSpecification;
 use Lode\AccessSyncLendEngine\specification\ArticleStatusLogSpecification;
 use Lode\AccessSyncLendEngine\specification\ArticleStatusSpecification;
+use Lode\AccessSyncLendEngine\specification\ColorSpecification;
 use Lode\AccessSyncLendEngine\specification\PartSpecification;
 use Symfony\Component\Console\Attribute\AsCommand;
 use Symfony\Component\Console\Command\Command;
@@ -19,25 +20,33 @@ class GatherExtraDataItemPartsCommand extends Command
 {
 	private const string ITEM_STATUS_DELETE = 'Afgekeurd-Definitief';
 	
+	protected function configure(): void
+	{
+		$this->addOption('useColors', description: 'append color to part descriptions');
+	}
+	
 	protected function execute(InputInterface $input, OutputInterface $output): int
 	{
 		$service = new ConvertCsvService();
 		$dataDirectory = dirname(dirname(__DIR__)).'/data';
+		$useColors = $input->getOption('useColors');
 		
-		$service->requireInputCsvs(
-			$dataDirectory,
-			[
-				'Onderdeel.csv',
-				'Artikel.csv',
-				'ArtikelStatus.csv',
-				'ArtikelStatusLogging.csv',
-			],
-			$output,
-		);
+		$csvFiles = [
+			'Onderdeel.csv',
+			'Artikel.csv',
+			'ArtikelStatus.csv',
+			'ArtikelStatusLogging.csv',
+		];
+		if ($useColors === true) {
+			$csvFiles[] = 'Kleur.csv';
+		}
+		
+		$service->requireInputCsvs($dataDirectory, $csvFiles, $output);
 		
 		$partMapping = [
 			'article_id'       => 'ond_art_id',
 			'part_description' => ['ond_oms', 'ond_nadereoms'],
+			'part_color'       => 'ond_kle_id',
 			'part_count'       => 'ond_aantal',
 			'part_sort'        => 'ond_volgnr',
 		];
@@ -61,6 +70,11 @@ class GatherExtraDataItemPartsCommand extends Command
 		
 		$articleStatusLoggingCsvLines = $service->getExportCsv($dataDirectory.'/ArtikelStatusLogging.csv', (new ArticleStatusLogSpecification())->getExpectedHeaders());
 		$output->writeln('Imported ' . count($articleStatusLoggingCsvLines) . ' article status logs');
+		
+		if ($useColors === true) {
+			$colorCsvLines = $service->getExportCsv($dataDirectory.'/Kleur.csv', (new ColorSpecification())->getExpectedHeaders());
+			$output->writeln('Imported ' . count($colorCsvLines). ' kleuren');
+		}
 		
 		$output->writeln('<info>Exporting parts ...</info>');
 		
@@ -88,6 +102,16 @@ class GatherExtraDataItemPartsCommand extends Command
 			$articleSku = $articleCsvLine['art_key'];
 			
 			$articleSkuMapping[$articleId] = $articleSku;
+		}
+		
+		if ($useColors === true) {
+			$colorMapping = [];
+			foreach ($colorCsvLines as $colorCsvLine) {
+				$colorId   = $colorCsvLine['kle_id'];
+				$colorName = $colorCsvLine['kle_oms'];
+				
+				$colorMapping[$colorId] = $colorName;
+			}
 		}
 		
 		$partSortMapping = [];
@@ -125,6 +149,14 @@ class GatherExtraDataItemPartsCommand extends Command
 				$partCsvLine[$partMapping['part_description'][0]],
 				$partCsvLine[$partMapping['part_description'][1]]
 			]));
+			
+			if ($useColors === true) {
+				$colorId = $partCsvLine[$partMapping['part_color']];
+				$colorName = $colorMapping[$colorId];
+				if ($colorName !== '-') {
+					$description .= ' ('.$colorName.')';
+				}
+			}
 			
 			$csvSort   = $partCsvLine[$partMapping['part_sort']];
 			$cleanSort = $partSortMapping[$articleId][$csvSort] + 1;
