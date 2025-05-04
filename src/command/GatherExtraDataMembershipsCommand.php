@@ -33,6 +33,7 @@ class GatherExtraDataMembershipsCommand extends Command
 	private const TARIFF_UNITS = [
 		'Maand' => 30.416666667,
 		'Jaar' => 365,
+		'Keer' => 9999,
 	];
 	
 	protected function execute(InputInterface $input, OutputInterface $output): int
@@ -181,10 +182,7 @@ class GatherExtraDataMembershipsCommand extends Command
 				$category = $tariff['category'];
 			}
 			
-			$duration = 0;
-			if ($category === self::CATEGORY_MEMBERSHIP) {
-				$duration = round($tariff['count'] * self::TARIFF_UNITS[$tariff['unit']]);
-			}
+			$duration = round($tariff['count'] * self::TARIFF_UNITS[$tariff['unit']]);
 			
 			$output->write('Membership type: "'.$name.'" ('.$tariff['category'].'), mapped to '.$category);
 			$output->writeln(', '.$tariff['count'].'x'.$tariff['unit']);
