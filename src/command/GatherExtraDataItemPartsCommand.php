@@ -44,11 +44,13 @@ class GatherExtraDataItemPartsCommand extends Command
 		$service->requireInputCsvs($dataDirectory, $csvFiles, $output);
 		
 		$partMapping = [
-			'article_id'       => 'ond_art_id',
-			'part_description' => ['ond_oms', 'ond_nadereoms'],
-			'part_color'       => 'ond_kle_id',
-			'part_count'       => 'ond_aantal',
-			'part_sort'        => 'ond_volgnr',
+			'article_id'         => 'ond_art_id',
+			'part_id'            => 'ond_id',
+			'part_description'   => ['ond_oms', 'ond_nadereoms'],
+			'part_color'         => 'ond_kle_id',
+			'part_count'         => 'ond_aantal',
+			'part_sort'          => 'ond_volgnr',
+			'part_sort_separate' => 'ond_apart',
 		];
 		$articleStatusMapping = [
 			'location_id'   => 'ats_id',
@@ -116,18 +118,21 @@ class GatherExtraDataItemPartsCommand extends Command
 		
 		$partSortMapping = [];
 		foreach ($partCsvLines as $partCsvLine) {
-			$articleId = $partCsvLine[$partMapping['article_id']];
-			$csvSort   = $partCsvLine[$partMapping['part_sort']];
+			$articleId       = $partCsvLine[$partMapping['article_id']];
+			$partId          = $partCsvLine[$partMapping['part_id']];
+			$csvSort         = (int) $partCsvLine[$partMapping['part_sort']];
+			$csvSortSeparate = (bool) $partCsvLine[$partMapping['part_sort_separate']];
 			
 			if (isset($partSortMapping[$articleId]) === false) {
 				$partSortMapping[$articleId] = [];
 			}
 			
-			$partSortMapping[$articleId][] = $csvSort;
+			$partSortMapping[$articleId][$partId] = ($csvSortSeparate === true) ? $csvSort + 1000 : $csvSort;
 		}
 		
 		foreach ($partSortMapping as &$sorts) {
-			sort($sorts);
+			asort($sorts);
+			$sorts = array_keys($sorts);
 			$sorts = array_flip($sorts);
 		}
 		unset($sorts);
@@ -135,6 +140,7 @@ class GatherExtraDataItemPartsCommand extends Command
 		$itemPartQueries = [];
 		foreach ($partCsvLines as $partCsvLine) {
 			$articleId = $partCsvLine[$partMapping['article_id']];
+			$partId    = $partCsvLine[$partMapping['part_id']];
 			
 			// skip permanently removed
 			if ($locationPerItem[$articleId] === self::ITEM_STATUS_DELETE) {
@@ -159,7 +165,7 @@ class GatherExtraDataItemPartsCommand extends Command
 			}
 			
 			$csvSort   = $partCsvLine[$partMapping['part_sort']];
-			$cleanSort = $partSortMapping[$articleId][$csvSort] + 1;
+			$cleanSort = $partSortMapping[$articleId][$partId] + 1;
 			
 			$itemPartQueries[] = "
 				INSERT INTO `item_part` SET
