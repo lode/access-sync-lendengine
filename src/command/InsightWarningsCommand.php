@@ -115,7 +115,7 @@ class InsightWarningsCommand extends Command
 			$articleSku = $articleCsvLine['art_key'];
 			
 			// skip permanently removed
-			if ($locationPerItem[$articleId] === self::ITEM_STATUS_DELETE) {
+			if (isset($locationPerItem[$articleId]) === true && $locationPerItem[$articleId] === self::ITEM_STATUS_DELETE) {
 				continue;
 			}
 			

@@ -139,7 +139,7 @@ class ConvertItemsCommand extends Command
 			// skip permanently removed
 			$articleId  = $articleCsvLine['art_id'];
 			$articleSku = $articleCsvLine['art_key'];
-			if ($locationPerItem[$articleId] === self::STATUS_DELETE) {
+			if (isset($locationPerItem[$articleId]) === true && $locationPerItem[$articleId] === self::STATUS_DELETE) {
 				$skusSkipped[$articleSku] = true;
 				continue;
 			}
