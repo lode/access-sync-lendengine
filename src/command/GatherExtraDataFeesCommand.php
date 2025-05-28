@@ -22,9 +22,10 @@ use Symfony\Component\Console\Output\OutputInterface;
 #[AsCommand(name: 'gather-extra-data-fees')]
 class GatherExtraDataFeesCommand extends Command
 {
-	private const string CATEGORY_LATE_IN        = 'Te laat';
-	private const string CATEGORY_MISSING_BROKEN = 'Kwijt/Kapot';
-	private const string CATEGORY_BACK_REPAIRED  = 'Terug/Gerepareerd';
+	private const string CATEGORY_LATE_IN         = 'Te laat';
+	private const string CATEGORY_MISSING_BROKEN  = 'Kwijt/Kapot';
+	private const string CATEGORY_BACK_REPAIRED   = 'Terug/Gerepareerd';
+	private const string CATEGORY_CASH_DIFFERENCE = 'Kasverschil';
 	
 	private const string ITEM_STATUS_DELETE = 'Afgekeurd-Definitief';
 	
@@ -180,10 +181,16 @@ class GatherExtraDataFeesCommand extends Command
 		
 		$openFeeQueries = [];
 		foreach ($ledgerCsvLines as $index => $ledgerCsvLine) {
-			$paidAt      = ($ledgerCsvLine[$ledgerMapping['payment_paid']] !== '') ? $ledgerCsvLine[$ledgerMapping['payment_paid']] : null;
-			$isScheduled = $paidAt === null && $ledgerCsvLine[$ledgerMapping['payment_scheduled']] === '1';
-			$emptyAmount = $ledgerCsvLine[$ledgerMapping['payment_amount']] === '€ 0.00';
-			$nonFee      = preg_match('{€ [1-9]}', $ledgerCsvLine[$ledgerMapping['payment_amount']]) === 1;
+			$category = $ledgerTypes[$ledgerCsvLine[$ledgerMapping['ledger_type_id']]];
+			$memberId = $ledgerCsvLine[$ledgerMapping['member_id']];
+			
+			$paidAt         = ($ledgerCsvLine[$ledgerMapping['payment_paid']] !== '') ? $ledgerCsvLine[$ledgerMapping['payment_paid']] : null;
+			$isScheduled    = $paidAt === null && $ledgerCsvLine[$ledgerMapping['payment_scheduled']] === '1';
+			$emptyAmount    = $ledgerCsvLine[$ledgerMapping['payment_amount']] === '€ 0.00';
+			$nonFee         = preg_match('{€ [1-9]}', $ledgerCsvLine[$ledgerMapping['payment_amount']]) === 1;
+			$isRefund       = $category === self::CATEGORY_BACK_REPAIRED;
+			$cashDifference = $category === self::CATEGORY_CASH_DIFFERENCE;
+			$notConnected   = ($memberId === '' || isset($membershipNumberMapping[$memberId]) === false);
 			
 			/**
 			 * skip:
@@ -192,7 +199,21 @@ class GatherExtraDataFeesCommand extends Command
 			 * - vague empty payments
 			 * - paying back
 			 */
-			if ($paidAt !== null || $isScheduled === true || $emptyAmount === true || $nonFee === true) {
+			if (
+				$paidAt !== null
+				||
+				$isScheduled === true
+				||
+				$emptyAmount === true
+				||
+				$nonFee === true
+				||
+				$isRefund === true
+				||
+				$cashDifference === true
+				||
+				$notConnected === true
+			) {
 				continue;
 			}
 			
@@ -200,8 +221,6 @@ class GatherExtraDataFeesCommand extends Command
 			$createdAt->setTimezone(new \DateTimeZone('UTC'));
 			$createdAt = $createdAt->format('Y-m-d H:i:s');
 			
-			$category    = $ledgerTypes[$ledgerCsvLine[$ledgerMapping['ledger_type_id']]];
-			$memberId    = $ledgerCsvLine[$ledgerMapping['member_id']];
 			$amount      = abs((float) substr($ledgerCsvLine[$ledgerMapping['payment_amount']], strpos($ledgerCsvLine[$ledgerMapping['payment_amount']], '-')));
 			$description = $ledgerCsvLine[$ledgerMapping['payment_note']];
 			$employeeId  = $ledgerCsvLine[$ledgerMapping['employee_id']];
