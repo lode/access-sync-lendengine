@@ -37,3 +37,4 @@
 	- 'Ook veldnamen in de eerste rij': aanvinken
 	- kies 'Volgende'
 	- kies 'Voltooien'
+	- Als alternatief is het mogelijk om in plaats van op Voltooien of Sluiten te klikken, 'exportstappen opslaan' aan te vinken, 	een naam te geven en dan aan te vinken 'outlook-taak maken'. Hierdoor kan je uit Outlook, onder Taken direct een export draaien.
