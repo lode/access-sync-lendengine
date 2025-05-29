@@ -84,7 +84,7 @@ class GatherExtraDataItemsCommand extends Command
 			$articleSku = $articleCsvLine[$articleMapping['sku']];
 			
 			// skip permanently removed
-			if ($locationPerItem[$articleId] === self::ITEM_STATUS_DELETE) {
+			if (isset($locationPerItem[$articleId]) === true && $locationPerItem[$articleId] === self::ITEM_STATUS_DELETE) {
 				continue;
 			}
 			
