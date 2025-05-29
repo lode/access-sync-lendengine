@@ -188,6 +188,11 @@ class ConvertContactsCommand extends Command
 			// phone number
 			$contactConverted['Telephone'] = implode(' / ', array_filter($contactConverted['Telephone']));
 			
+			// required fields
+			if ($contactConverted['First name'] === '') {
+				$contactConverted['First name'] = '-';
+			}
+			
 			$contactsConverted[] = $contactConverted;
 		}
 		
