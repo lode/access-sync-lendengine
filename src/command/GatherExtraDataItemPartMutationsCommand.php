@@ -8,6 +8,7 @@ use Lode\AccessSyncLendEngine\service\ConvertCsvService;
 use Lode\AccessSyncLendEngine\specification\ArticleSpecification;
 use Lode\AccessSyncLendEngine\specification\ArticleStatusLogSpecification;
 use Lode\AccessSyncLendEngine\specification\ArticleStatusSpecification;
+use Lode\AccessSyncLendEngine\specification\ColorSpecification;
 use Lode\AccessSyncLendEngine\specification\EmployeeSpecification;
 use Lode\AccessSyncLendEngine\specification\MemberSpecification;
 use Lode\AccessSyncLendEngine\specification\PartMutationSpecification;
@@ -36,29 +37,37 @@ class GatherExtraDataItemPartMutationsCommand extends Command
 	
 	private const string ITEM_STATUS_DELETE = 'Afgekeurd-Definitief';
 	
+	protected function configure(): void
+	{
+		$this->addOption('useColors', description: 'append color to part descriptions');
+	}
+	
 	protected function execute(InputInterface $input, OutputInterface $output): int
 	{
 		$service = new ConvertCsvService();
 		$dataDirectory = dirname(dirname(__DIR__)).'/data';
+		$useColors = $input->getOption('useColors');
 		
-		$service->requireInputCsvs(
-			$dataDirectory,
-			[
-				'Onderdeel.csv',
-				'OnderdeelMutatie.csv',
-				'Artikel.csv',
-				'ArtikelStatus.csv',
-				'ArtikelStatusLogging.csv',
-				'Lid.csv',
-				'Medewerker.csv',
-			],
-			$output,
-		);
+		$csvFiles = [
+			'Onderdeel.csv',
+			'OnderdeelMutatie.csv',
+			'Artikel.csv',
+			'ArtikelStatus.csv',
+			'ArtikelStatusLogging.csv',
+			'Lid.csv',
+			'Medewerker.csv',
+		];
+		if ($useColors === true) {
+			$csvFiles[] = 'Kleur.csv';
+		}
+		
+		$service->requireInputCsvs($dataDirectory, $csvFiles, $output);
 		
 		$partMapping = [
 			'part_id'          => 'ond_id',
 			'article_id'       => 'ond_art_id',
 			'part_description' => ['ond_oms', 'ond_nadereoms'],
+			'part_color'       => 'ond_kle_id',
 			'part_count'       => 'ond_aantal',
 		];
 		
@@ -110,6 +119,11 @@ class GatherExtraDataItemPartMutationsCommand extends Command
 		$employeeCsvLines = $service->getExportCsv($dataDirectory.'/Medewerker.csv', (new EmployeeSpecification())->getExpectedHeaders());
 		$output->writeln('Imported ' . count($employeeCsvLines). ' medewerkers');
 		
+		if ($useColors === true) {
+			$colorCsvLines = $service->getExportCsv($dataDirectory.'/Kleur.csv', (new ColorSpecification())->getExpectedHeaders());
+			$output->writeln('Imported ' . count($colorCsvLines). ' kleuren');
+		}
+		
 		$locationMapping = [];
 		foreach ($articleStatusCsvLines as $articleStatusCsvLine) {
 			$locationId   = $articleStatusCsvLine[$articleStatusMapping['location_id']];
@@ -136,6 +150,16 @@ class GatherExtraDataItemPartMutationsCommand extends Command
 			$articleSkuMapping[$articleId] = $articleSku;
 		}
 		
+		if ($useColors === true) {
+			$colorMapping = [];
+			foreach ($colorCsvLines as $colorCsvLine) {
+				$colorId   = $colorCsvLine['kle_id'];
+				$colorName = $colorCsvLine['kle_oms'];
+				
+				$colorMapping[$colorId] = $colorName;
+			}
+		}
+		
 		$partRelatedDataMapping = [];
 		foreach ($partCsvLines as $partCsvLine) {
 			$partId            = $partCsvLine[$partMapping['part_id']];
@@ -143,6 +167,14 @@ class GatherExtraDataItemPartMutationsCommand extends Command
 			$partOriginalCount = $partCsvLine[$partMapping['part_count']];
 			$partDescriptions  = array_intersect_key($partCsvLine, array_flip($partMapping['part_description'])); // ['ond_oms', 'ond_nadereoms']
 			$partDescription   = implode(' / ', array_filter($partDescriptions));
+			
+			if ($useColors === true) {
+				$colorId = $partCsvLine[$partMapping['part_color']];
+				$colorName = $colorMapping[$colorId];
+				if ($colorName !== '-') {
+					$partDescription .= ' ('.$colorName.')';
+				}
+			}
 			
 			// skip permanently removed
 			if ($locationPerItem[$articleId] === self::ITEM_STATUS_DELETE) {
